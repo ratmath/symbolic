@@ -1,0 +1,58 @@
+{
+  "name": "@ratmath/symbolic",
+  "version": "0.0.0",
+  "description": "Symbolic algebra for RatMath: expressions, rewriting, solving and closed forms, with every step checked by the certified libraries",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "src/",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "test": "bun test ./tests",
+    "docs:build": "bun scripts/build-docs.js"
+  },
+  "keywords": [
+    "symbolic",
+    "computer-algebra",
+    "simplify",
+    "solve",
+    "exact",
+    "ratmath"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ratmath/symbolic.git"
+  },
+  "homepage": "https://ratmath.com/symbolic/",
+  "bugs": {
+    "url": "https://github.com/ratmath/symbolic/issues"
+  },
+  "dependencies": {
+    "@ratmath/core": "^0.10.0"
+  },
+  "devDependencies": {
+    "katex": "0.19.1"
+  },
+  "types": "index.d.ts",
+  "author": "James Taylor",
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
