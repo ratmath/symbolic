@@ -198,6 +198,124 @@ export class Verdict {
 export function equal(a: ExprLike, b: ExprLike, options?: EqualOptions): Verdict;
 export function simplify(x: ExprLike, options?: Options): Expr;
 
+// ---- solving ----
+
+export interface SolveOptions extends Options {
+  /** Keep only solutions in this range; a periodic family is listed out when both ends are given. */
+  range?: [ExprLike | number | null, ExprLike | number | null];
+  /** Where to look for sign changes when no closed form is found. Default [-100, 100]. */
+  interval?: [number | Rational, number | Rational];
+}
+export class Solution {
+  /** The solution as an expression; a periodic family uses the integer n. */
+  readonly value: Expr;
+  /** For a family: the period, so the solutions are value + n·period. */
+  readonly period: Expr | null;
+  /** "exact" (closed form), "algebraic" (a named root of a polynomial) or "numeric" (an isolated sign change). */
+  readonly kind: "exact" | "algebraic" | "numeric";
+  /** How it was confirmed in the original equation. */
+  readonly verified: "proven" | "sign change" | "enclosed";
+  /** Conditions on other letters under which it holds. */
+  readonly where: readonly string[];
+  /** A certified interval around the solution. */
+  enclosure(bits?: number): RationalInterval;
+  approx(): number;
+  /** One member of a periodic family. */
+  member(n: number): Expr;
+  toString(): string;
+}
+export class Solutions implements Iterable<Solution> {
+  readonly variable: string;
+  readonly solutions: readonly Solution[];
+  /** Candidates that failed the check in the original equation, with the reason. */
+  readonly rejected: ReadonlyArray<{ value: Expr; reason: string }>;
+  /** true when the method proves there are no other solutions. */
+  readonly complete: boolean;
+  /** true when every value of the variable (in the domain) is a solution. */
+  readonly all: boolean;
+  /** The solution set when it is a union of intervals, as for abs(x) = x. */
+  readonly set: RealSet | null;
+  readonly conditions: readonly string[];
+  readonly notes: readonly string[];
+  readonly steps: ReadonlyArray<{ rule: string; detail: string }>;
+  readonly values: readonly Expr[];
+  [Symbol.iterator](): Iterator<Solution>;
+  toString(): string;
+}
+/** Solve an equation ("lhs = rhs", or an expression meaning "= 0") for one variable. Every solution returned was checked in the original equation. */
+export function solve(equation: ExprLike, variable?: string, options?: SolveOptions): Solutions;
+
+export class RealSet {
+  readonly pieces: ReadonlyArray<{ lo: Expr | null; hi: Expr | null; loClosed: boolean; hiClosed: boolean }>;
+  readonly isEmpty: boolean;
+  readonly isAll: boolean;
+  contains(q: number | Rational): boolean | null;
+  /** The set in Core's region notation where the ends are rational. */
+  toRegionText(): string;
+  toString(): string;
+}
+/** Solve an inequality ("f < g", "<=", ">", ">=", "!=") in one variable: critical points, then the sign on each piece. */
+export function solveInequality(inequality: string, variable?: string, options?: SolveOptions): RealSet;
+
+// ---- calculus ----
+
+export interface IntegrateOptions extends Options {
+  from?: ExprLike | number;
+  to?: ExprLike | number;
+}
+export class Antiderivative {
+  readonly integrand: Expr;
+  readonly variable: string;
+  readonly found: boolean;
+  /** The antiderivative (without the constant), or null. */
+  readonly result: Expr | null;
+  /** "proven": the normal form shows its derivative is the integrand. "checked": the two agree at test points. */
+  readonly verified: "proven" | "checked" | null;
+  readonly checkedAt?: number | null;
+  readonly steps: ReadonlyArray<{ rule: string; detail: string }>;
+  /** With { from, to }: the exact value, or null when F(b) − F(a) is not the integral. */
+  readonly value?: Expr | null;
+  /** With rational ends: certified quadrature of the integrand. */
+  readonly enclosure?: { low: Rational; high: Rational } | null;
+  /** Whether the exact value lies in the certified enclosure. */
+  readonly agrees?: boolean | null;
+  readonly note?: string | null;
+  toString(): string;
+}
+/** An antiderivative by the methods of the course, differentiated and compared with the integrand before it is returned. */
+export function integrate(f: ExprLike, variable?: string, options?: IntegrateOptions): Antiderivative;
+
+export interface Expansion {
+  polynomial: Expr;
+  /** coefficients[i] multiplies (x − about)^(lowest + i). */
+  coefficients: Expr[];
+  /** Negative at a pole. */
+  lowest: number;
+  order: number;
+  about: Expr;
+  variable: string;
+  toString(): string;
+}
+/** The Taylor polynomial (or Laurent expansion at a pole) with exact coefficients. */
+export function taylor(f: ExprLike, variable?: string, about?: ExprLike | number, order?: number, options?: Options): Expansion;
+
+export class Limit {
+  readonly expression: Expr;
+  readonly variable: string;
+  readonly at: string;
+  readonly side: "left" | "right" | null;
+  /** "finite" (see value), "inf", "-inf", "none" (the two sides differ: see reason), "numeric" (a certified enclosure only) or "unknown". */
+  readonly kind: "finite" | "inf" | "-inf" | "none" | "numeric" | "unknown";
+  readonly value?: Expr;
+  readonly method?: string;
+  /** true when the certified limit from analytic contains the value. */
+  readonly confirmed?: boolean;
+  readonly enclosure?: RationalInterval | null;
+  readonly reason?: string;
+  toString(): string;
+}
+export function limit(f: ExprLike, variable?: string, at?: ExprLike | number | "inf" | "-inf", options?: Options & { side?: "left" | "right" }): Limit;
+
 export interface PlannedPhase {
   phase: number;
   contents: string;
