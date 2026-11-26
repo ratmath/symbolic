@@ -7,31 +7,36 @@
       "dependencies": {
         "@ratmath/algebraic": "^0.1.0",
         "@ratmath/analytic": "^0.1.0",
-        "@ratmath/core": "^0.10.0",
         "@ratmath/structures": "^0.1.0",
       },
       "devDependencies": {
+        "@ratmath/core": "^0.11.0",
         "katex": "0.19.1",
+      },
+      "peerDependencies": {
+        "@ratmath/core": ">=0.10.0 <0.12.0",
       },
     },
     "vendor/algebraic": {
       "name": "@ratmath/algebraic",
       "version": "0.1.0",
-      "dependencies": {
-        "@ratmath/core": "^0.10.0",
-      },
       "devDependencies": {
+        "@ratmath/core": "^0.11.0",
         "katex": "0.19.1",
+      },
+      "peerDependencies": {
+        "@ratmath/core": ">=0.10.0 <0.12.0",
       },
     },
     "vendor/analytic": {
       "name": "@ratmath/analytic",
       "version": "0.1.0",
-      "dependencies": {
-        "@ratmath/core": "^0.10.0",
-      },
       "devDependencies": {
+        "@ratmath/core": "^0.11.0",
         "katex": "0.19.1",
+      },
+      "peerDependencies": {
+        "@ratmath/core": ">=0.10.0 <0.12.0",
       },
     },
     "vendor/structures": {
@@ -39,10 +44,13 @@
       "version": "0.1.0",
       "dependencies": {
         "@ratmath/algebraic": "^0.1.0",
-        "@ratmath/core": "^0.10.0",
       },
       "devDependencies": {
+        "@ratmath/core": "^0.11.0",
         "katex": "0.19.1",
+      },
+      "peerDependencies": {
+        "@ratmath/core": ">=0.10.0 <0.12.0",
       },
     },
   },
@@ -51,7 +59,7 @@
 
     "@ratmath/analytic": ["@ratmath/analytic@workspace:vendor/analytic"],
 
-    "@ratmath/core": ["@ratmath/core@0.10.0", "", {}, "sha512-+lw3Eclhc9aDc2QPGpPpf6cgE4IqifgCXgunjaM/XKgDMJzL6YF/rPB8pBOgUd7krM+mzz8XSXKhL8kpdgOQsw=="],
+    "@ratmath/core": ["@ratmath/core@0.11.0", "", {}, "sha512-MqYSFSe1M893+gsG4MJzwBRlriHl4Xa4USzX/KCfkyAufCVqeA9f7QUN0H/sefZ1t9jid6VdniBenVCz0/5fiA=="],
 
     "@ratmath/structures": ["@ratmath/structures@workspace:vendor/structures"],
 
