@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- `@ratmath/core` is now a peer dependency (`>=0.10.0 <0.12.0`): the package
+  uses the program's own copy of Core instead of bringing its own, so Core 0.11
+  works and there is never a second copy whose `Rational` is not the same class.
+
 ## 0.2.0
 
 Phases 4 and 5 of the roadmap: systems, trigonometric families, sums, and
