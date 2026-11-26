@@ -452,6 +452,52 @@ class Ctx {
     return (E) => E.gen(k.name);
   }
 
+  /**
+   * sin or cos of u written another way, or null: of an inverse function
+   * (sin(asin w) = w, cos(asin w) = sqrt(1 − w²), sin(atan w) = w/sqrt(1 + w²), …,
+   * each true wherever the left side is defined), or of an angle with a
+   * multiple of pi in it, by the turns and quarter turns
+   * (sin(w + pi) = −sin w, cos(w + pi/2) = −sin w, sin(w + 2pi) = sin w).
+   */
+  trigOf(name, u) {
+    const t = u.tree;
+    if (t.type === "call" && (t.name === "asin" || t.name === "acos" || t.name === "atan")) {
+      const w = t.args[0];
+      const root = (sign) => call("sqrt", op(sign, num(1), op("^", w, num(2))));
+      const table = {
+        asin: { sin: w, cos: root("-") },
+        acos: { sin: root("-"), cos: w },
+        atan: { sin: op("/", w, root("+")), cos: op("/", num(1), root("+")) },
+      };
+      return table[t.name][name];
+    }
+    // the part of u that is a rational multiple of pi
+    const pi = u.ctx.index.get("pi");
+    if (!pi || !u.frac.den.isConstant()) return null;
+    const ip = u.E.R.indexOf(pi.name);
+    let q = ZERO;
+    for (const term of u.frac.num.terms()) {
+      if (term.exponents.every((e, i) => (i === ip ? e === 1 : e === 0))) q = q.add(term.coefficient);
+    }
+    if (q.equals(ZERO)) return null;
+    q = q.divide(u.frac.den.toConstant());
+    const w = op("-", u.tree, op("*", num(q), PI_AST));
+    const turns = q.divide(Q(2)).floor();
+    const r = q.subtract(new Rational(turns * 2n));
+    const half = r.multiply(Q(2));
+    if (half.denominator === 1n) {
+      const quarter = Number(half.numerator);
+      const sin = name === "sin";
+      // sin: w, cos w, −sin w, −cos w;  cos: cos w, −sin w, −cos w, sin w
+      const which = sin ? ["sin", "cos", "sin", "cos"][quarter] : ["cos", "sin", "cos", "sin"][quarter];
+      const negative = sin ? quarter >= 2 : quarter === 1 || quarter === 2;
+      const out = call(which, w);
+      return negative ? op("neg", out) : out;
+    }
+    if (r.equals(q)) return null;
+    return call(name, op("+", w, op("*", num(r), PI_AST)));
+  }
+
   /** sin/cos (pyth = 1: s² + c² = 1) or sinh/cosh (pyth = −1: s² − c² = −1) of a. */
   prepTrig(name, a, S, C, pyth) {
     const { n: u, zero, flipped } = this.signed(a);
@@ -463,6 +509,11 @@ class Ctx {
       if (special !== null && 12n % special.denominator === 0n) {
         const k = Number((special.numerator * (12n / special.denominator)) % 24n);
         const val = this.prep(sin12(odd ? k : k + 6));
+        return (E) => (odd && flipped ? val(E).neg() : val(E));
+      }
+      const other = this.trigOf(name, u);
+      if (other) {
+        const val = this.prep(other);
         return (E) => (odd && flipped ? val(E).neg() : val(E));
       }
     }

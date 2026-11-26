@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trigonometric equations · RatMath Symbolic</title>
+<meta name="description" content="Trigonometric equations with @ratmath/symbolic: every family of solutions, letters with their conditions, the double-angle and power-reduction formulas, and families merged to the smallest period.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Trigonometric equations</div>
+<h1>Every family of solutions</h1>
+<p class="lede">A trigonometric equation has infinitely many solutions. <code>solve</code> returns them as families \(x_0 + n\,p\), merges families that are really one, and checks every family in the equation as written.</p>
+<h2>Using it</h2>
+<pre><code>import { solve } from "@ratmath/symbolic";
+
+String(solve("2sin(x) = 1"));             // x = pi/6 + 2*n*pi,  5*pi/6 + 2*n*pi   (n any whole number)
+String(solve("sin(x)*cos(x) = 1/4"));     // x = pi/12 + n*pi,  5*pi/12 + n*pi
+String(solve("sin(3x) = 0"));             // x = n*pi/3
+String(solve("cos(x) + cos(3x) = 0"));    // x = pi/4 + n*pi/2,  pi/2 + n*pi
+
+const r = solve("sin(x) = a", "x");
+String(r);         // x = asin(a) + 2*n*pi,  pi - asin(a) + 2*n*pi, provided abs(a) &lt;= 1
+r.conditions;      // ["abs(a) &lt;= 1"]
+
+const s = solve("2sin(x) = 1").solutions[0];
+String(s.period);       // "2*pi"
+String(s.member(1));    // "13*pi/6"</code></pre>
+<p>With <code>{ range: [lo, hi] }</code> the families are listed member by member inside the range, as on the <a href="solving.html">Solving</a> page.</p>
+
+<h2>The general solution of the basic equations</h2>
+<p>Each of the three basic equations has a principal solution from the inverse function and a rule for the others:</p>
+\[ \sin x = a:\; x = \arcsin a + 2n\pi \text{ or } \pi - \arcsin a + 2n\pi, \qquad \cos x = a:\; x = \pm\arccos a + 2n\pi, \qquad \tan x = a:\; x = \arctan a + n\pi. \]
+<p>The first two need \(|a| \le 1\). When \(a\) is a number the library decides that itself; when it is a letter it asks the assumptions, and if they do not settle it the condition <code>abs(a) &lt;= 1</code> is returned with the answer. At the exact angles (multiples of \(\pi/12\)) the inverse function is written as that angle, so \(\arcsin\tfrac12\) appears as \(\pi/6\).</p>
+<p>When the angle is \(kx + b\) instead of \(x\), each family is solved for \(x\): the period becomes \(2\pi/|k|\).</p>
+
+<h2>Reducing to the basic equations</h2>
+<p>Most equations from a course become one of the basic three after a standard move. The solver tries them in turn:</p>
+<ul>
+<li><strong>One function, polynomially.</strong> \(2\cos^2 x - 3\cos x + 1 = 0\) is a quadratic in \(u = \cos x\): \(u = 1\) or \(u = 1/2\), then each is inverted.</li>
+<li><strong>Homogeneous in sine and cosine.</strong> \(\sin x = \cos x\), or \(\sin^2 x - 3\sin x\cos x + 2\cos^2 x = 0\): divide by a power of \(\cos x\) and solve for \(\tan x\).</li>
+<li><strong>Power reduction and double angles.</strong> A product or power of \(\sin x\) and \(\cos x\) is rewritten as sines and cosines of multiples of \(x\), through \(\sin x = (z - z^{-1})/2i\) and \(\cos x = (z + z^{-1})/2\) with \(z = e^{ix}\). If one multiple is left, that is an equation in one angle: \(\sin x\cos x = \tfrac14\) becomes \(\tfrac12\sin 2x = \tfrac14\).</li>
+<li><strong>Angle sums.</strong> \(\sin 2x = \cos x\) is expanded with the double-angle formula and factored: \(\cos x\,(2\sin x - 1) = 0\).</li>
+<li><strong>The half-angle substitution.</strong> Anything left that is a polynomial in \(\sin x\) and \(\cos x\) becomes a polynomial in \(t = \tan(x/2)\), through \(\sin x = 2t/(1+t^2)\) and \(\cos x = (1-t^2)/(1+t^2)\). The substitution misses \(x = \pi\), which is tried separately.</li>
+</ul>
+
+<h2>Families that are one family</h2>
+<p>The methods above can return several families with the same period whose starting points are evenly spaced, as \(\sin 3x = 0\) gives \(2n\pi/3\) and \(\pi/3 + 2n\pi/3\). Those are one family, \(n\pi/3\). The library reduces each starting point modulo the period, looks for \(k\) of them spaced exactly \(p/k\) apart, and proves the spacing with the normal form before merging them. A family written twice (\(-\pi/2 + 2n\pi\) and \(3\pi/2 + 2n\pi\)) is listed once.</p>
+
+<h2>What the normal form knows</h2>
+<p>To check a family with a letter in it, the solution is put back and the difference reduced to zero. That needs a few identities, which the <a href="normal-forms.html">normal form</a> now applies wherever the left side is defined:</p>
+\[ \sin(\arcsin w) = w,\quad \cos(\arcsin w) = \sqrt{1-w^2},\quad \sin(\arctan w) = \frac{w}{\sqrt{1+w^2}},\quad \sin(w + \pi) = -\sin w,\quad \cos(w + \tfrac{\pi}{2}) = -\sin w. \]
+<p>The square roots are right, not just up to sign, because \(\arcsin\) and \(\arctan\) take values in \([-\pi/2, \pi/2]\), where the cosine is not negative; \(\arccos\) takes values in \([0, \pi]\), where the sine is not negative.</p>
+<template data-runbox>
+// Equations from a trigonometry course, with the method each one used.
+for (const eq of [
+  "2cos(x)^2 - 3cos(x) + 1 = 0",
+  "sin(x)^2 = 3cos(x)^2",
+  "sin(x)*cos(x) = 1/4",
+  "cos(x)^2 - sin(x)^2 = 1/2",
+  "sin(2x) = cos(x)",
+  "sin(x) + sqrt(3)*cos(x) = 1",
+  "tan(x) = sqrt(3)",
+  "sin(4x) = 0",
+]) {
+  const r = solve(eq);
+  PRINT(eq.padEnd(30), String(r).split("\n")[0]);
+  PRINT("".padEnd(30), "by:", r.steps.map((s) =&gt; s.rule).filter((s) =&gt; s !== "linear").slice(0, 3).join(", "));
+}
+
+// A letter: the condition comes back
+String(solve("cos(2x) = b", "x"))
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

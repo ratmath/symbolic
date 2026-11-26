@@ -1,6 +1,6 @@
 {
   "name": "@ratmath/symbolic",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Symbolic algebra for RatMath: expressions, rewriting, solving and closed forms, with every step checked by the certified libraries",
   "type": "module",
   "main": "index.js",

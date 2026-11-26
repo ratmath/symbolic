@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Step records · RatMath Symbolic</title>
+<meta name="description" content="Step records with @ratmath/symbolic: every operation can return the named steps that produced its answer, each checked by the normal form, at test points, or by checking the result.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Step records</div>
+<h1>Step records for every operation</h1>
+<p class="lede"><code>explain.solve(…)</code>, <code>explain.factor(…)</code> and the rest run an operation and return its answer with the list of named steps that produced it, for an app to show. A step is shown only if it was checked, and it says how.</p>
+<h2>Using it</h2>
+<pre><code>import { explain, sym } from "@ratmath/symbolic";
+
+const d = explain.expand("(x + 1)^2 - (x - 1)^2");
+String(d);
+// expand (x + 1)^2 - (x - 1)^2
+// 1. multiply out
+//     (x + 1)^2  =  x^2 + 2*x + 1   [proven]
+// 2. multiply out
+//     (x - 1)^2  =  x^2 - 2*x + 1   [proven]
+// 3. collect like terms
+//     x^2 + 2*x + 1 - (x^2 - 2*x + 1)  =  4*x   [proven]
+// result: 4*x
+
+d.steps[0].rule;        // "multiply out"
+String(d.steps[0].to);  // "x^2 + 2*x + 1"
+d.steps[0].check;       // "proven"
+d.toTeX();              // an aligned block of the steps
+
+String(sym("x^4 - 1").explain("factor"));       // the same, as a method
+String(explain.solve("sqrt(x + 3) = x - 3"));   // the method's steps, the check, and the rejected candidate</code></pre>
+<p>Every operation has one: <code>expand</code>, <code>factor</code>, <code>collect</code>, <code>apart</code>, <code>simplify</code>, <code>rewrite</code>, <code>equal</code>, <code>solve</code>, <code>solveInequality</code>, <code>solveSystem</code>, <code>integrate</code>, <code>limit</code>, <code>taylor</code> and <code>sum</code>. Each takes the same arguments as the operation and returns a <code>Derivation</code>: <code>operation</code>, <code>input</code>, <code>result</code> (what the operation itself returns), <code>steps</code> and <code>omitted</code>.</p>
+
+<h2>Three ways a step is checked</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th><code>check</code></th><th>Meaning</th></tr>
+<tr><td><code>"proven"</code></td><td>The step is an equality \(A = B\) and the normal form of \(A - B\) is 0, or it is a proof in itself (a point that separates two expressions, an antidifference that differences back to the term).</td></tr>
+<tr><td><code>"test points"</code></td><td>\(A\) and \(B\) agree to certified precision at exact test points, but the normal form could not show they are equal. This is evidence, not proof, and <code>checkedAt</code> says how many points agreed.</td></tr>
+<tr><td><code>"by the result"</code></td><td>The step is part of a method whose outcome is checked as a whole: the solutions of an equation are put back into it, an antiderivative is differentiated, an antidifference is differenced. Squaring both sides is not an equivalence, so it cannot be checked on its own; what matters is that the candidates it produces are.</td></tr>
+</table></div>
+<p>A step between two expressions that could not be checked at all is not shown; <code>omitted</code> counts such steps. So an app that displays a derivation never displays an unchecked equality.</p>
+
+<h2>What the steps are</h2>
+<p><strong>Rewriting.</strong> <code>expand</code> multiplies out each term that needs it and then collects like terms; a quotient is first brought over a common denominator, with the cancelled factors named. <code>factor</code> expands and then factors over the rationals. <code>apart</code> forms one fraction, factors the denominator, and splits. <code>simplify</code> shows each rule the assumptions allow, then the choice of the smallest equal form. <code>rewrite</code> shows each rule application, and the rules that were blocked because their conditions were not proven.</p>
+<p><strong>Equality.</strong> The normal form of each side, and then either the difference reducing to 0, a point where certified values of the two sides do not overlap, or the plain statement that the question is undecided.</p>
+<p><strong>Solving, integrating, limits and sums.</strong> The steps of the method in the order they were taken (substitution, zero product, quadratic formula, inverse sine with every turn, integration by parts, partial fractions, sums of powers, telescoping, …), followed by the check that makes them trustworthy: solutions put back, rejected candidates with the reason, the derivative of the antiderivative, the antidifference.</p>
+<template data-runbox>
+// A worked page of algebra, one derivation per line of homework.
+for (const d of [
+  explain.expand("(2x - 3)^2 - (x + 1)*(x - 1)"),
+  explain.factor("x^3 - 3x^2 - x + 3"),
+  explain.apart("(3x + 5)/(x^2 + x - 2)", "x"),
+  explain.simplify("log(x^3) - log(x)", { assume: { x: "positive" } }),
+  explain.equal("cos(x)^4 - sin(x)^4", "cos(2x)"),
+]) PRINT(String(d), "\n");
+
+PRINT(String(explain.solve("x + sqrt(x) = 6")), "\n");
+PRINT(String(explain.integrate("x^2*exp(x)")), "\n");
+PRINT(String(explain.solveSystem(["x + 2y = 5", "3x - y = 1"])), "\n");
+
+// How the steps were checked
+const counts = {};
+for (const d of [explain.expand("(x+1)^5"), explain.solve("sin(x)*cos(x) = 1/4"), explain.sum("k^3", "k", 1, "n")]) for (const s of d.steps) counts[s.check] = (counts[s.check] ?? 0) + 1;
+counts
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

@@ -49,6 +49,12 @@ export class Expr {
   rewrite(rules: RuleSet, options?: RewriteOptions): RewriteResult;
   equals(other: ExprLike, options?: EqualOptions): Verdict;
   sign(assumptions?: Assumptions | AssumptionSpec): Sign;
+  solve(name?: string, options?: SolveOptions): Solutions;
+  integrate(name?: string, options?: IntegrateOptions): Antiderivative;
+  limit(name?: string, at?: ExprLike | number | "inf" | "-inf", options?: Options & { side?: "left" | "right" }): Limit;
+  taylor(name?: string, about?: ExprLike | number, order?: number, options?: Options): Expansion;
+  /** The checked steps of an operation: sym("x^4 - 1").explain("factor"). */
+  explain<K extends keyof Explain>(operation: K, ...args: Explain[K] extends (x: any, ...rest: infer R) => any ? R : never): Derivation;
 }
 
 export function sym(x: ExprLike): Expr;
@@ -149,7 +155,7 @@ export interface RewriteOptions extends Options {
   /** Check each application at exact test points. Default true. */
   check?: boolean;
 }
-export interface Step {
+export interface RewriteStep {
   rule: string;
   from: Expr;
   to: Expr;
@@ -158,7 +164,7 @@ export interface Step {
 }
 export interface RewriteResult {
   expr: Expr;
-  steps: Step[];
+  steps: RewriteStep[];
   blocked: Array<{ rule: string; at: Expr; needs: string[] }>;
   conditions: string[];
 }
@@ -316,11 +322,106 @@ export class Limit {
 }
 export function limit(f: ExprLike, variable?: string, at?: ExprLike | number | "inf" | "-inf", options?: Options & { side?: "left" | "right" }): Limit;
 
+// ---- systems ----
+
+export interface SystemSolution {
+  /** The value of each unknown; a free unknown is its own value. */
+  readonly values: Readonly<Record<string, Expr>>;
+  /** The unknowns that can take any value. */
+  readonly free: readonly string[];
+  readonly verified: "proven";
+}
+export class SystemSolutions implements Iterable<SystemSolution> {
+  readonly variables: readonly string[];
+  readonly kind: "linear" | "nonlinear";
+  readonly solutions: readonly SystemSolution[];
+  readonly rejected: ReadonlyArray<{ values: Record<string, Expr>; reason: string }>;
+  readonly complete: boolean;
+  readonly conditions: readonly string[];
+  readonly notes: readonly string[];
+  readonly steps: ReadonlyArray<{ rule: string; detail: string }>;
+  readonly length: number;
+  [Symbol.iterator](): Iterator<SystemSolution>;
+  toString(): string;
+}
+/** Solve several equations for several unknowns (default: every letter, sorted). Every solution was put back into every equation. */
+export function solveSystem(equations: ExprLike[] | Array<[ExprLike, ExprLike]>, variables?: string[], options?: Options): SystemSolutions;
+
+// ---- sums ----
+
+export class Sum {
+  readonly term: Expr;
+  readonly index: string;
+  readonly from: Expr;
+  readonly to: Expr | "inf";
+  /** The closed form, "inf"/"-inf" for a sum that diverges to infinity, or null. */
+  readonly value: Expr | "inf" | "-inf" | null;
+  /** F with F(k + 1) − F(k) = f(k), proven by the normal form, or null. */
+  readonly antidifference: Expr | null;
+  readonly method: string;
+  /** "proven", "checked" (a table value, against an exact partial sum and a proven tail bound) or null. */
+  readonly verified: "proven" | "checked" | null;
+  readonly diverges: boolean;
+  readonly conditions: readonly string[];
+  readonly steps: ReadonlyArray<{ rule: string; detail: string }>;
+  readonly note: string | null;
+  toString(): string;
+  toTeX(): string;
+}
+/** Σ f(k) for k = from … to in closed form; `to` may be "inf". */
+export function sum(f: ExprLike, index?: string, from?: ExprLike | number, to?: ExprLike | number | "inf", options?: Options): Sum;
+
+// ---- step records ----
+
+export class Step {
+  readonly rule: string;
+  readonly detail: string;
+  /** For a step between two expressions. */
+  readonly from: Expr | null;
+  readonly to: Expr | null;
+  /** "proven": same normal form, or a proof in itself. "test points": agreement at exact points only. "by the result": part of a method whose outcome was checked. */
+  readonly check: "proven" | "test points" | "by the result";
+  readonly checkedAt: number | null;
+  toString(): string;
+  toTeX(): string;
+}
+export class Derivation<R = unknown> implements Iterable<Step> {
+  readonly operation: string;
+  readonly input: Expr | string;
+  /** What the operation itself returns. */
+  readonly result: R;
+  readonly steps: readonly Step[];
+  /** Steps that could not be checked, and so are not shown. */
+  readonly omitted: number;
+  readonly length: number;
+  [Symbol.iterator](): Iterator<Step>;
+  toString(): string;
+  toTeX(): string;
+}
+export interface Explain {
+  expand(x: ExprLike, options?: NormalOptions): Derivation<Expr>;
+  factor(x: ExprLike, options?: NormalOptions): Derivation<Expr>;
+  collect(x: ExprLike, name?: string, options?: NormalOptions): Derivation<Expr>;
+  apart(x: ExprLike, name?: string, options?: NormalOptions): Derivation<Expr>;
+  simplify(x: ExprLike, options?: Options): Derivation<Expr>;
+  rewrite(x: ExprLike, rules: RuleSet, options?: RewriteOptions): Derivation<Expr>;
+  equal(a: ExprLike, b: ExprLike, options?: EqualOptions): Derivation<Verdict>;
+  solve(equation: ExprLike, variable?: string, options?: SolveOptions): Derivation<Solutions>;
+  solveInequality(inequality: string, variable?: string, options?: SolveOptions): Derivation<RealSet>;
+  solveSystem(equations: ExprLike[], variables?: string[], options?: Options): Derivation<SystemSolutions>;
+  integrate(f: ExprLike, variable?: string, options?: IntegrateOptions): Derivation<Antiderivative>;
+  limit(f: ExprLike, variable?: string, at?: ExprLike | number | "inf" | "-inf", options?: Options & { side?: "left" | "right" }): Derivation<Limit>;
+  taylor(f: ExprLike, variable?: string, about?: ExprLike | number, order?: number, options?: Options): Derivation<Expansion>;
+  sum(f: ExprLike, index?: string, from?: ExprLike | number, to?: ExprLike | number | "inf", options?: Options): Derivation<Sum>;
+}
+/** Run an operation and return its result with the checked steps that produced it. */
+export const explain: Readonly<Explain>;
+
 export interface PlannedPhase {
   phase: number;
   contents: string;
   /** Rough size in source lines, as text. */
   estimate: string;
 }
-/** The phases still to come. */
+/** The phases still to come: empty, since all five are built. */
 export const plan: readonly PlannedPhase[];

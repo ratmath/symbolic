@@ -1,8 +1,8 @@
 // Shared page furniture for the symbolic docs: the contents column, the theme
 // switch and the code boxes. Add each topic page to PAGES as it is written.
 
-import * as A from "./symbolic.js?v=595953f997";
-import { mountRunboxes } from "./runbox.js?v=595953f997";
+import * as A from "./symbolic.js?v=6be208ad0b";
+import { mountRunboxes } from "./runbox.js?v=6be208ad0b";
 
 export { A };
 
@@ -17,10 +17,14 @@ export const PAGES = [
   { href: "rules.html", title: "Rules", blurb: "Rewriting rules that carry their conditions and are checked when used" },
   { href: "equality.html", title: "Equality", blurb: "Equal, different or undecided, and what each one proves" },
   { href: "solving.html", title: "Solving equations", blurb: "Every candidate checked in the original equation; the ones that fail are reported" },
+  { href: "trig-equations.html", title: "Trigonometric equations", blurb: "Every family of solutions, letters with their conditions, families merged" },
+  { href: "systems.html", title: "Systems of equations", blurb: "Elimination with letters, families of solutions, substitution and resultants" },
   { href: "inequalities.html", title: "Inequalities", blurb: "Critical points, the sign on each piece, and the set where it holds" },
   { href: "antiderivatives.html", title: "Antiderivatives", blurb: "The methods of the course, each result differentiated before it is returned" },
   { href: "limits.html", title: "Limits", blurb: "Closed forms by cancelling and leading terms, confirmed by certified enclosures" },
   { href: "expansions.html", title: "Expansions", blurb: "Taylor polynomials and Laurent expansions with exact coefficients" },
+  { href: "sums.html", title: "Sums", blurb: "Sums of powers, geometric and telescoping sums, famous series, each proven" },
+  { href: "steps.html", title: "Step records", blurb: "The checked steps behind every answer, for an app to show" },
 ];
 
 export const h = (tag, attrs = {}, ...kids) => {

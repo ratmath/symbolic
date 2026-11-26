@@ -412,7 +412,14 @@ class Solver {
       return sub(G.args[0], c.map((t) => tidy(call("exp", t), A)));
     }
     if (G.type === "call" && (G.name === "sin" || G.name === "cos")) {
-      const one = signOf(c.map((t) => op("-", num(1), op("^", t, num(2)))), A);
+      let one = signOf(c.map((t) => op("-", num(1), op("^", t, num(2)))), A);
+      if (one === null && freeVariables(c.tree).size > c.alg.size) {
+        // a letter on the other side: the solutions exist only when it lies in [−1, 1]
+        const fits = A.proves(`${format(op("-", num(1), op("^", c.tree, num(2))))} >= 0`);
+        if (fits === false) return [];
+        if (fits !== true) this.conditions.add(`abs(${format(c.tree)}) <= 1`);
+        one = 1;
+      }
       if (one === null) return null;
       if (one < 0) return [];
       const period = op("*", num(2), PI);
@@ -515,6 +522,22 @@ class Solver {
       if (got === null || got === "all") return null;
       return finish(got, (t) => this.inverseTrig("tan", t), period(PI), "divide by a power of the cosine: an equation in tan");
     }
+    // products and powers of sin u and cos u with number coefficients: write them as sines and
+    // cosines of multiples of u; when one multiple is left, that is an equation in one angle
+    const lin = linearize(g, iS, iC, s.name, c.name);
+    if (lin) {
+      const freqs = [...lin.keys()].filter((m) => m > 0);
+      if (freqs.length === 1 && freqs[0] > 1) {
+        const m = freqs[0];
+        const { cos: a, sin: b } = lin.get(m);
+        const c0 = lin.get(0)?.cos ?? ZERO;
+        const angle = tidy(op("*", num(Q(m)), u), A);
+        const eq = op("+", op("+", op("*", num(a), call("cos", angle)), op("*", num(b), call("sin", angle))), num(c0));
+        this.step("power-reduction and double-angle formulas", `${format(T)} = 0 becomes ${format(tidy(eq, A))} = 0, an equation in the one angle ${format(angle)}`);
+        const got = this.solve(eq);
+        if (got !== null && got !== "all") return got;
+      }
+    }
     // t = tan(u/2):  sin u = 2t/(1+t²),  cos u = (1−t²)/(1+t²);  u = pi is looked at separately
     const t = v(name);
     const den = op("+", num(1), op("^", t, num(2)));
@@ -606,6 +629,51 @@ class Solver {
     }
     return roots.map((val) => ({ val, period: null, variants: variants.length === (1 << flips.length) - 1 ? variants : null, needsProof: true }));
   }
+}
+
+/**
+ * A polynomial in s = sin u and c = cos u with number coefficients as
+ * c0 + Σ (a_m cos(m u) + b_m sin(m u)): a Map m → { cos: a_m, sin: b_m }, or
+ * null when a coefficient is not a number. Through z = e^(iu):
+ * s = (z − 1/z)/(2i), c = (z + 1/z)/2, with Gaussian rationals.
+ */
+function linearize(g, iS, iC, sName, cName) {
+  if (g.variables().some((n) => n !== sName && n !== cName)) return null;
+  const cmul = ([a, b], [c, d]) => [a.multiply(c).subtract(b.multiply(d)), a.multiply(d).add(b.multiply(c))];
+  const times = (P, F) => {
+    const out = new Map();
+    for (const [m, x] of P) for (const [k, y] of F) {
+      const z = cmul(x, y);
+      const old = out.get(m + k) ?? [ZERO, ZERO];
+      out.set(m + k, [old[0].add(z[0]), old[1].add(z[1])]);
+    }
+    return out;
+  };
+  const half = Q(1, 2);
+  const S = new Map([[1, [ZERO, half.negate()]], [-1, [ZERO, half]]]); // (z − 1/z)·(−i/2)
+  const C = new Map([[1, [half, ZERO]], [-1, [half, ZERO]]]);
+  const total = new Map();
+  for (const term of g.terms()) {
+    let P = new Map([[0, [term.coefficient, ZERO]]]);
+    for (let i = 0; i < term.exponents[iS]; i++) P = times(P, S);
+    for (let i = 0; i < term.exponents[iC]; i++) P = times(P, C);
+    for (const [m, x] of P) {
+      const old = total.get(m) ?? [ZERO, ZERO];
+      total.set(m, [old[0].add(x[0]), old[1].add(x[1])]);
+    }
+  }
+  const out = new Map();
+  for (const [m, [re, im]] of total) {
+    if (m < 0) continue;
+    if (m === 0) {
+      if (!re.equals(ZERO)) out.set(0, { cos: re, sin: ZERO });
+      continue;
+    }
+    const a = re.multiply(TWO);
+    const b = im.multiply(TWO).negate();
+    if (!a.equals(ZERO) || !b.equals(ZERO)) out.set(m, { cos: a, sin: b });
+  }
+  return out;
 }
 
 function polyTreeOf(cs, name) {
@@ -822,6 +890,9 @@ function finishSolutions(accepted, A) {
     if (!same) kept.push(c);
     else if (same.verified !== "proven" && c.verified === "proven") same.verified = "proven";
   }
+  const merged = [...mergeFamilies(kept, A)];
+  kept.length = 0;
+  kept.push(...merged);
   const order = (c) => soft(() => c.val.approx(), 0);
   kept.sort((a, b) => (a.period ? 1 : 0) - (b.period ? 1 : 0) || order(a) - order(b));
   return kept.map(
@@ -835,6 +906,61 @@ function finishSolutions(accepted, A) {
         where: describe(c.val),
       }),
   );
+}
+
+/**
+ * Families with the same period P whose bases, taken modulo P, are evenly
+ * spaced by P/k are one family of period P/k: {2n·pi, pi + 2n·pi} is n·pi.
+ * Each merge is checked exactly (the spacing is proven by the normal form).
+ */
+function mergeFamilies(cands, A) {
+  const plainNumber = (t) => freeVariables(t).size === 0;
+  const fam = cands.filter((c) => c.period && c.val.exact && plainNumber(c.val.tree) && plainNumber(c.period));
+  if (fam.length < 2) return cands;
+  const out = cands.filter((c) => !fam.includes(c));
+  const groups = new Map();
+  for (const c of fam) {
+    const k = key(c.period);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(c);
+  }
+  const rank = { proven: 0, "sign change": 1, enclosed: 2 };
+  for (const group of groups.values()) {
+    const P = group[0].period;
+    const Pv = soft(() => new Val(P).approx());
+    if (!Pv || group.length < 2) {
+      out.push(...group);
+      continue;
+    }
+    let items = group.map((c) => {
+      const turns = Math.floor(c.val.approx() / Pv + 1e-9);
+      const r = tidy(op("-", c.val.tree, op("*", num(Q(turns)), P)), A);
+      return { c, r, x: new Val(r).approx() };
+    });
+    items.sort((a, b) => a.x - b.x);
+    // the same family written twice (−pi/2 + 2n·pi and 3pi/2 + 2n·pi)
+    items = items.filter((it, i) => !items.slice(0, i).some((o) => Math.abs(o.x - it.x) < 1e-9 && soft(() => isZero(op("-", it.r, o.r), { assume: A })) === true));
+    for (let k = items.length; k >= 2; k--) {
+      const step = tidy(op("/", P, num(Q(k))), A);
+      const sv = Pv / k;
+      for (const start of [...items]) {
+        if (!items.includes(start) || start.x >= sv - 1e-9) continue;
+        const members = [start];
+        for (let j = 1; j < k; j++) {
+          const target = start.x + j * sv;
+          const hit = items.find((it) => Math.abs(it.x - target) < 1e-9 && soft(() => isZero(op("-", op("-", it.r, start.r), op("*", num(Q(j)), step)), { assume: A })) === true);
+          if (!hit) break;
+          members.push(hit);
+        }
+        if (members.length < k) continue;
+        const worst = members.map((m) => m.c.verified).sort((a, b) => (rank[b] ?? 3) - (rank[a] ?? 3))[0];
+        out.push({ ...start.c, val: new Val(start.r), period: step, verified: worst });
+        items = items.filter((it) => !members.includes(it));
+      }
+    }
+    out.push(...items.map((it) => it.c));
+  }
+  return out;
 }
 
 /** Where the unknown may lie: from { range: [lo, hi] } (ends are expressions, both included) or from the assumptions. */

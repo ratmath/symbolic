@@ -12,8 +12,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=595953f997">
-<script type="module" src="assets/site.js?v=595953f997"></script>
+<link rel="stylesheet" href="assets/style.css?v=6be208ad0b">
+<script type="module" src="assets/site.js?v=6be208ad0b"></script>
 </head>
 <body>
 <div class="shell">
@@ -22,7 +22,7 @@
 <article>
 <div class="eyebrow">Explore</div>
 <h1>Explore</h1>
-<p class="lede">Type an expression, state what you assume about its letters, and see each form of it. Then put a second expression beside it and ask whether the two are equal, solve an equation or an inequality, and do the calculus.</p>
+<p class="lede">Type an expression, state what you assume about its letters, and see each form of it. Then put a second expression beside it and ask whether the two are equal, solve an equation or an inequality, solve a system, do the calculus and sum a series, and see the checked steps behind an answer.</p>
 
 <div class="demo">
 <div class="demo-row"><label for="ex-a">Expression</label><input id="ex-a" class="text grow" value="sqrt(x^2 + 2x + 1) + (x^2 - 1)/(x - 1)" spellcheck="false" autocapitalize="off"></div>
@@ -60,6 +60,29 @@
 <div id="ex-calc"></div>
 </div>
 
+<h2>Systems</h2>
+<div class="demo">
+<div class="demo-row"><label for="ex-sys">Equations, separated by semicolons</label><input id="ex-sys" class="text grow" value="x^2 + y^2 = 25; x + y = 7" spellcheck="false" autocapitalize="off"></div>
+<div class="demo-row"><label for="ex-sysv">Unknowns</label><input id="ex-sysv" class="text" size="12" value="" placeholder="x, y" spellcheck="false" autocapitalize="off"><span class="muted">(optional; other letters are parameters)</span></div>
+<div class="demo-row" id="ex-chips4"></div>
+<div class="out" id="ex-system"></div>
+</div>
+
+<h2>Sums</h2>
+<div class="demo">
+<div class="demo-row"><label for="ex-term">Term in k</label><input id="ex-term" class="text grow" value="k*2^k" spellcheck="false" autocapitalize="off"></div>
+<div class="demo-row"><label for="ex-from">k from</label><input id="ex-from" class="text" size="6" value="0" spellcheck="false" autocapitalize="off"><label for="ex-to">to</label><input id="ex-to" class="text" size="8" value="n" spellcheck="false" autocapitalize="off"><span class="muted">(an expression or inf)</span></div>
+<div class="demo-row" id="ex-chips5"></div>
+<div class="out" id="ex-sum"></div>
+</div>
+
+<h2>Steps</h2>
+<div class="demo">
+<div class="demo-row"><label for="ex-op">Operation</label><select id="ex-op" class="text"><option>expand</option><option selected>factor</option><option>apart</option><option>simplify</option><option>solve</option><option>integrate</option><option value="limit">limit as x → 1</option></select><input id="ex-stepin" class="text grow" value="x^3 - 3x^2 - x + 3" spellcheck="false" autocapitalize="off" aria-label="input"></div>
+<div class="demo-row" id="ex-chips6"></div>
+<div class="out" id="ex-steps"></div>
+</div>
+
 <p>Assumptions are written as <code>name: fact</code>, separated by semicolons. A fact is a word (<code>positive</code>, <code>negative</code>, <code>nonnegative</code>, <code>nonzero</code>, <code>integer</code>), a comparison (<code>&gt; 2</code>) or an interval (<code>in (0, 1]</code>). See <a href="assumptions.html">Assumptions</a>.</p>
 <section class="runbox" aria-label="Runnable code">
   <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/symbolic</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math.</span></div>
@@ -83,7 +106,7 @@ rewrite("sin(x + y)*cos(x - y)", rules.trig.expand).expr.expand().toString()</te
 </main>
 </div>
 <script type="module">
-import { A as S, h } from "./assets/site.js?v=595953f997";
+import { A as S, h } from "./assets/site.js?v=6be208ad0b";
 const $ = (id) => document.getElementById(id);
 const EXAMPLES = [
   ["sqrt(x^2 + 2x + 1) + (x^2 - 1)/(x - 1)", "", "2x + 2"],
@@ -240,6 +263,85 @@ $("ex-chips3").append(...CALC.map(([f, at]) => h("button", { class: "chipbtn", o
 } }, f)));
 for (const id of ["ex-f", "ex-at", "ex-order"]) $(id).addEventListener("input", updateCalc);
 updateCalc();
+
+// ---- systems ----
+const SYSTEMS = [["x^2 + y^2 = 25; x + y = 7", ""], ["2x + 3y - z = 1; x - y + 2z = 4; 3x + y + z = 5", ""], ["x + y + z = 1; x - y = 0", ""], ["a*x + y = 1; x + a*y = 1", "x, y"], ["x*y = 1; x^2 + y^2 = 3", ""], ["y = x^2; y = 2x + 3", ""]];
+function updateSystem() {
+  const out = $("ex-system");
+  try {
+    const eqs = $("ex-sys").value.split(";").map((e) => e.trim()).filter(Boolean);
+    const vs = $("ex-sysv").value.trim();
+    const r = S.solveSystem(eqs, vs ? vs.split(/[ ,]+/).filter(Boolean) : undefined);
+    out.replaceChildren(h("dl", { class: "kv" },
+      ...(r.solutions.length ? r.solutions.map((s, i) => line(`solution ${i + 1}`, () => r.variables.map((x) => `${x} = ${s.values[x]}`).join(",  ") + (s.free.length ? `   (${s.free.join(", ")} free)` : ""))) : [line("solutions", () => (r.complete ? "none" : "none found"))]),
+      ...(r.conditions.length ? [line("provided", () => r.conditions.join(" and "))] : []),
+      line("complete", () => (r.complete ? "yes" : "not proven")),
+      ...r.steps.map((st) => line(st.rule, () => st.detail)),
+      ...r.notes.map((n) => line("note", () => n)),
+    ));
+  } catch (e) {
+    out.replaceChildren(h("div", { class: "err" }, e.message));
+  }
+}
+$("ex-chips4").append(...SYSTEMS.map(([e, vs]) => h("button", { class: "chipbtn", onclick: () => {
+  $("ex-sys").value = e;
+  $("ex-sysv").value = vs;
+  updateSystem();
+} }, e)));
+for (const id of ["ex-sys", "ex-sysv"]) $(id).addEventListener("input", updateSystem);
+updateSystem();
+
+// ---- sums ----
+const SUMS = [["k*2^k", "0", "n"], ["k^4", "1", "n"], ["1/(k*(k+1))", "1", "inf"], ["(2/3)^k", "0", "inf"], ["1/k^2", "1", "inf"], ["(-1)^(k+1)/k", "1", "inf"], ["1/k", "1", "inf"], ["r^k", "0", "n"]];
+function updateSum() {
+  const out = $("ex-sum");
+  try {
+    const r = S.sum($("ex-term").value, "k", $("ex-from").value.trim() || "0", $("ex-to").value.trim() || "n");
+    out.replaceChildren(h("dl", { class: "kv" },
+      line("value", () => (r.value === null ? (r.diverges ? "diverges" : "no closed form found") : String(r.value))),
+      line("how", () => `${r.method}${r.verified ? `; ${r.verified}` : ""}`),
+      ...(r.antidifference ? [line("antidifference", () => `F(k) = ${r.antidifference}`)] : []),
+      ...(r.conditions.length ? [line("provided", () => r.conditions.join(" and "))] : []),
+      ...(r.note ? [line("note", () => r.note)] : []),
+      ...r.steps.map((st) => line(st.rule, () => st.detail)),
+    ));
+  } catch (e) {
+    out.replaceChildren(h("div", { class: "err" }, e.message));
+  }
+}
+$("ex-chips5").append(...SUMS.map(([f, a, b]) => h("button", { class: "chipbtn", onclick: () => {
+  $("ex-term").value = f;
+  $("ex-from").value = a;
+  $("ex-to").value = b;
+  updateSum();
+} }, `${f}, ${a} to ${b}`)));
+for (const id of ["ex-term", "ex-from", "ex-to"]) $(id).addEventListener("input", updateSum);
+updateSum();
+
+// ---- steps ----
+const STEPS = [["factor", "x^3 - 3x^2 - x + 3"], ["expand", "(2x - 3)^2 - (x + 1)*(x - 1)"], ["apart", "(3x + 5)/(x^2 + x - 2)"], ["solve", "sqrt(x + 3) = x - 3"], ["solve", "sin(x)*cos(x) = 1/4"], ["integrate", "x^2*exp(x)"], ["limit", "(x^2 - 1)/(x - 1)"]];
+function updateSteps() {
+  const out = $("ex-steps");
+  try {
+    const op = $("ex-op").value;
+    const input = $("ex-stepin").value;
+    const d = op === "limit" ? S.explain.limit(input, "x", 1) : op === "apart" ? S.explain.apart(input, "x") : S.explain[op](input);
+    out.replaceChildren(h("dl", { class: "kv" },
+      ...d.steps.map((st, i) => line(`${i + 1}. ${st.rule}`, () => `${st.from && st.to ? `${st.from}  =  ${st.to}` : st.detail}   [${st.check}]`)),
+      line("result", () => String(d.result).split("\n")[0]),
+      ...(d.omitted ? [line("not shown", () => `${d.omitted} step(s) that could not be checked`)] : []),
+    ));
+  } catch (e) {
+    out.replaceChildren(h("div", { class: "err" }, e.message));
+  }
+}
+$("ex-chips6").append(...STEPS.map(([op, e]) => h("button", { class: "chipbtn", onclick: () => {
+  $("ex-op").value = op;
+  $("ex-stepin").value = e;
+  updateSteps();
+} }, `${op}: ${e}`)));
+for (const id of ["ex-op", "ex-stepin"]) $(id).addEventListener("input", updateSteps);
+updateSteps();
 </script>
 </body>
 </html>

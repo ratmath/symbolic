@@ -74,6 +74,8 @@
 <tr><td><code>Solutions</code></td><td><code>solutions</code>, <code>rejected</code> (<code>{ value, reason }</code> for candidates that failed the check), <code>complete</code>, <code>all</code>, <code>set</code> (a <code>RealSet</code> when the solutions fill intervals), <code>conditions</code>, <code>notes</code>, <code>steps</code>, <code>values</code>. Iterable.</td></tr>
 <tr><td><code>Solution</code></td><td><code>value</code>, <code>kind</code> (<code>"exact"</code>, <code>"algebraic"</code>, <code>"numeric"</code>), <code>verified</code> (<code>"proven"</code>, <code>"sign change"</code>, <code>"enclosed"</code>), <code>period</code> and <code>member(n)</code> for a family, <code>where</code>, <code>enclosure(bits)</code>, <code>approx()</code>.</td></tr>
 <tr><td><code>solveInequality(inequality, name, options)</code></td><td>The <code>RealSet</code> where <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code> or <code>!=</code> holds. Options: <code>assume</code>, <code>range</code> (needed for periodic inequalities).</td></tr>
+<tr><td><code>solveSystem(equations, variables, options)</code></td><td>A <code>SystemSolutions</code> object for a list of equations in several unknowns (default: every letter, sorted). Linear systems by Gauss–Jordan with letters allowed in the coefficients; others by substitution and resultants. Option <code>assume</code>.</td></tr>
+<tr><td><code>SystemSolutions</code></td><td><code>variables</code>, <code>kind</code> (<code>"linear"</code> or <code>"nonlinear"</code>), <code>solutions</code> (each <code>{ values: { x: Expr, … }, free, verified }</code>; a free unknown is its own value), <code>rejected</code>, <code>complete</code>, <code>conditions</code>, <code>notes</code>, <code>steps</code>. Iterable.</td></tr>
 <tr><td><code>RealSet</code></td><td><code>pieces</code> (<code>{ lo, hi, loClosed, hiClosed }</code>, <code>null</code> for an unbounded end), <code>isEmpty</code>, <code>isAll</code>, <code>contains(q)</code>, <code>toRegionText()</code>.</td></tr>
 </table></div>
 <h2>Calculus</h2>
@@ -82,13 +84,22 @@
 <tr><td><code>integrate(f, name, options)</code></td><td>An <code>Antiderivative</code>: <code>found</code>, <code>result</code>, <code>verified</code> (<code>"proven"</code> or <code>"checked"</code>), <code>checkedAt</code>, <code>steps</code>. With <code>{ from, to }</code> also <code>value</code> (exact, or <code>null</code> when F(b) − F(a) is not the integral), <code>enclosure</code> (certified quadrature, for rational ends), <code>agrees</code>, <code>note</code>. Option <code>assume</code>.</td></tr>
 <tr><td><code>limit(f, name, at, options)</code></td><td>A <code>Limit</code>: <code>kind</code> (<code>"finite"</code>, <code>"inf"</code>, <code>"-inf"</code>, <code>"none"</code>, <code>"numeric"</code>, <code>"unknown"</code>), <code>value</code>, <code>method</code>, <code>confirmed</code>, <code>enclosure</code>, <code>reason</code>. <code>at</code> is an expression, <code>"inf"</code> or <code>"-inf"</code>; option <code>side: "left" | "right"</code>.</td></tr>
 <tr><td><code>taylor(f, name, about, order)</code></td><td><code>{ polynomial, coefficients, lowest, order, about }</code>: exact coefficients of <code>(x − about)^(lowest + i)</code>; <code>lowest</code> is negative at a pole.</td></tr>
+<tr><td><code>sum(f, index, from, to, options)</code></td><td>A <code>Sum</code>: <code>value</code> (an <code>Expr</code>, <code>"inf"</code>, <code>"-inf"</code> or <code>null</code>), <code>antidifference</code> (proven, or <code>null</code>), <code>method</code>, <code>verified</code> (<code>"proven"</code>, <code>"checked"</code> for a table value, or <code>null</code>), <code>diverges</code>, <code>conditions</code>, <code>steps</code>, <code>note</code>. <code>to</code> may be <code>"inf"</code>. Option <code>assume</code>.</td></tr>
 <tr><td><code>Expr</code> methods</td><td><code>.solve(name, options)</code>, <code>.integrate(name, options)</code>, <code>.limit(name, at, options)</code>, <code>.taylor(name, about, order)</code>.</td></tr>
+</table></div>
+<h2>Step records</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>explain.<em>op</em>(…)</code></td><td>For <em>op</em> one of <code>expand</code>, <code>factor</code>, <code>collect</code>, <code>apart</code>, <code>simplify</code>, <code>rewrite</code>, <code>equal</code>, <code>solve</code>, <code>solveInequality</code>, <code>solveSystem</code>, <code>integrate</code>, <code>limit</code>, <code>taylor</code>, <code>sum</code>: run it with the same arguments and return a <code>Derivation</code>.</td></tr>
+<tr><td><code>Derivation</code></td><td><code>operation</code>, <code>input</code>, <code>result</code> (what the operation returns), <code>steps</code>, <code>omitted</code> (steps that could not be checked and are not shown), <code>toString()</code>, <code>toTeX()</code>. Iterable over its steps.</td></tr>
+<tr><td><code>Step</code></td><td><code>rule</code>, <code>detail</code>, <code>from</code> and <code>to</code> (Exprs, for a step between two expressions), <code>check</code> (<code>"proven"</code>, <code>"test points"</code>, <code>"by the result"</code>), <code>checkedAt</code>.</td></tr>
+<tr><td><code>expr.explain(op, …args)</code></td><td>The same as <code>explain[op](expr, …args)</code>.</td></tr>
 </table></div>
 <h2>Errors and plan</h2>
 <div class="tablewrap"><table class="ref">
 <tr><th>Export</th><th>What it does</th></tr>
 <tr><td><code>SymbolicError</code></td><td>Thrown with a <code>code</code>: <code>domain</code>, <code>division-by-zero</code>, <code>bad-rule</code>, <code>not-polynomial</code>, <code>not-univariate</code>, <code>too-large</code>.</td></tr>
-<tr><td><code>plan</code></td><td>The phases still to come.</td></tr>
+<tr><td><code>plan</code></td><td>The phases still to come: empty, since all five are built.</td></tr>
 </table></div>
 <template data-runbox>
 // One of each.

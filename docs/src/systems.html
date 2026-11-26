@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Systems of equations · RatMath Symbolic</title>
+<meta name="description" content="Systems of equations with @ratmath/symbolic: Gauss–Jordan elimination with letters in the coefficients, families of solutions, substitution and resultants for nonlinear systems, every solution checked.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Systems</div>
+<h1>Systems of equations</h1>
+<p class="lede"><code>solveSystem</code> solves several equations in several unknowns: linear systems by elimination, letters and all, and nonlinear ones by substitution or by eliminating an unknown with the resultant. Every solution is put back into every equation.</p>
+<h2>Using it</h2>
+<pre><code>import { solveSystem } from "@ratmath/symbolic";
+
+String(solveSystem(["x + y = 3", "x - y = 1"]));
+// x = 2,  y = 1
+
+String(solveSystem(["2x + 3y - z = 1", "x - y + 2z = 4", "3x + y + z = 5"]));
+// x = 6/5,  y = 0,  z = 7/5
+
+String(solveSystem(["a*x + y = 1", "x - y = 0"], ["x", "y"]));
+// x = 1/(a + 1),  y = 1/(a + 1)
+//   provided a + 1 != 0
+
+String(solveSystem(["x + y + z = 1", "x - y = 0"]));
+// x = 1/2 - z/2,  y = 1/2 - z/2,  z = z   (z free)
+
+String(solveSystem(["x + y = 1", "2x + 2y = 3"]));
+// no solution
+
+String(solveSystem(["x^2 + y^2 = 25", "x + y = 7"]));
+// x = 3,  y = 4
+// x = 4,  y = 3</code></pre>
+<p>The unknowns default to every letter in the equations, in alphabetical order; pass them as the second argument when some letters are parameters. The result has <code>solutions</code> (each with <code>values</code>, <code>free</code> and <code>verified</code>), <code>complete</code>, <code>conditions</code>, <code>notes</code> and <code>steps</code>.</p>
+
+<h2>Linear systems: Gauss–Jordan with letters</h2>
+<p>When every equation is linear in the unknowns, the system is the matrix equation \(A\mathbf{x} = \mathbf{b}\) and is reduced to reduced row echelon form. The entries are expressions, not just numbers, and each one is kept in <a href="normal-forms.html">normal form</a> as the rows are combined. A pivot must not be zero:</p>
+<ul>
+<li>a number that is not zero is used first;</li>
+<li>otherwise an entry with letters that is not proven zero is used, and the condition that it is not zero is returned, unless the assumptions already prove it.</li>
+</ul>
+<p>A row that ends as \(0 = b\) decides the rest. If \(b\) is a nonzero number the system is <em>inconsistent</em> and has no solution. If \(b\) has letters, the equations agree only when \(b = 0\), and that is returned as a condition. Columns without a pivot are <em>free</em>: the unknowns there can take any value, and the others are written in terms of them. The number of free unknowns is the number of unknowns minus the rank.</p>
+<p>The linear algebra library, <a href="https://ratmath.com/linalg/">linalg</a>, solves systems with number entries much faster; this one is for coefficients with letters in them, which is where a first course spends its time (for which \(a\) does the system have one solution, none, infinitely many?).</p>
+
+<h2>Nonlinear systems</h2>
+<p><strong>Substitution.</strong> If some equation contains an unknown only to the first power, \(a\,x + b = 0\) with \(a, b\) free of \(x\), it is solved for \(x = -b/a\) and that is put into the other equations, leaving one unknown fewer. A number coefficient is preferred. When \(a\) contains other unknowns, the case \(a = 0\) is solved separately, so that nothing is lost by dividing.</p>
+<p><strong>Elimination.</strong> When every equation is a polynomial, the resultant of two of them with respect to an unknown \(y\) is a polynomial without \(y\) that vanishes wherever both do. Eliminating one unknown at a time leaves one equation in one unknown, which <a href="solving.html"><code>solve</code></a> handles; each value is then carried back and the next unknown found. A resultant can have roots that belong to no solution, which is one reason every candidate is checked at the end.</p>
+<p><strong>The check.</strong> Each candidate is substituted into every equation as written, and the difference of the two sides must reduce to 0 in normal form. A candidate that fails is dropped; one that cannot be decided is left out and noted, and the answer is marked incomplete.</p>
+<p>What is not handled: values with no closed form (a root of a quintic) are noted and not followed, and a curve of solutions (two equations with a common factor) is reported as incomplete.</p>
+<template data-runbox>
+// For which a does this system have one solution, none, or infinitely many?
+const sys = (a) =&gt; solveSystem([`x + ${a}*y = 1`, `${a}*x + y = 1`], ["x", "y"]);
+PRINT("general a:", String(solveSystem(["x + a*y = 1", "a*x + y = 1"], ["x", "y"])));
+for (const a of ["-1", "1", "2"]) PRINT(`a = ${a}:`.padEnd(8), String(sys(a)).replace(/\n/g, " |"));
+
+// A circle and a line, a circle and a parabola, a hyperbola and a circle
+for (const eqs of [
+  ["x^2 + y^2 = 25", "y = x + 1"],
+  ["x^2 + y^2 = 1", "y = x^2 - 1"],
+  ["x*y = 1", "x^2 + y^2 = 3"],
+]) PRINT(eqs.join(",  "), "\n   ", String(solveSystem(eqs)).replace(/\n/g, "\n    "));
+
+// Three unknowns
+solveSystem(["x + y + z = 6", "x*y = 2", "x - y = 1"]).toString()
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>
