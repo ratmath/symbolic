@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Equality · RatMath Symbolic</title>
+<meta name="description" content="Equality of expressions with three answers in @ratmath/symbolic: proven equal, proven different, or undecided.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Equality</div>
+<h1>Equal, different, or undecided</h1>
+<p class="lede">Asking whether two expressions are equal has no general algorithm. The honest reply has three values, and two of them come with a proof.</p>
+
+<h2>The three answers</h2>
+<pre><code>import { equal } from "@ratmath/symbolic";
+
+const a = equal("(x + 1)^2", "x^2 + 2x + 1");
+a.verdict;      // "equal"
+a.method;       // "normal form"
+
+const b = equal("sqrt(x^2)", "x");
+b.verdict;      // "different"
+b.witness;      // { point: { x: -2/3 }, left: [0.666…], right: [-0.666…] }   exact point, certified enclosures
+
+const c = equal("atan(1)", "pi/4");
+c.verdict;      // "undecided"
+c.agreedAt;     // 1   test point where the enclosures overlapped, which proves nothing
+c.value;        // null   (true / false / null for the three verdicts)</code></pre>
+<p><strong>Equal</strong> is a proof by <a href="normal-forms.html">normal form</a>: the difference of the two expressions reduces to zero using only relations that hold wherever the expressions are defined. It means equal wherever both sides are defined, under the assumptions given.</p>
+<p><strong>Different</strong> is a proof by witness: at an exact rational point that satisfies the assumptions, certified interval evaluation of the two sides gives intervals that do not meet. For expressions without variables the precision is raised (to about 4,000 bits) before giving up, so \(\pi\) against \(22/7\), or \(\sqrt2\) against a decimal, is settled quickly.</p>
+<p><strong>Undecided</strong> means neither. The normal form does not know the identity and no test point separated the two sides. The library reports how many points agreed, and does not turn that into a claim.</p>
+
+<h2>Why not just compare numerically?</h2>
+<p>Because agreement to many digits is not equality. The expressions</p>
+\[ e^{\pi\sqrt{163}} \qquad\text{and}\qquad 262537412640768744 \]
+<p>agree to twelve decimal places after the point and are different numbers. With certified arithmetic the difference is found once enough precision is used, and it is a proof. In the other direction, no amount of numerical agreement can prove an identity, so the library does not try.</p>
+<p>There is also a theorem behind the third answer. Richardson showed in 1968 that for expressions built from the rationals, \(\pi\), \(\log 2\), a variable, \(\sin\), \(\exp\) and \(|\cdot|\), no algorithm decides whether an expression is identically zero. A system that always answers yes or no must sometimes be wrong.</p>
+
+<h2>Assumptions change the answer</h2>
+<pre><code>String(equal("log(a*b)", "log(a) + log(b)"));
+// "undecided …": they agree wherever both are defined, but the rule is not valid in general
+
+String(equal("log(a*b)", "log(a) + log(b)", { assume: { a: "positive", b: "positive" } }));
+// "equal (normal form, after the rules the assumptions allow)"
+
+String(equal("(a^b)^c", "a^(b*c)", { assume: { a: "positive" } }));   // equal</code></pre>
+<p>With assumptions, <code>equal</code> first applies the <a href="rules.html">rules</a> whose conditions it can prove (powers, logarithms, angle sums) and then compares normal forms. For hyperbolic functions it also tries writing them through the exponential, which is how \(\cosh x + \sinh x = e^x\) is proven.</p>
+
+<h2>Simplifying</h2>
+<p><code>simplify</code> uses the same machinery and returns an expression that is proven equal to its input wherever the input is defined: the smallest of the normal form, the factored form, and the normal form after the provable rules.</p>
+<pre><code>String(simplify("(x^2 - 1)/(x - 1)"));                                          // "x + 1"
+String(simplify("sqrt(a^2*b)", { assume: { a: "positive", b: "positive" } }));  // "a*sqrt(b)"
+String(simplify("sin(x)^4 - cos(x)^4"));                                        // "1 - 2*cos(x)^2"</code></pre><template data-runbox>
+const ask = (a, b, opts) =&gt; PRINT(`${a}  ≟  ${b}${opts ? "   given " + assume(opts.assume) : ""}\n    ${equal(a, b, opts)}`);
+
+// identities a course proves
+ask("tan(x)^2 + 1", "1/cos(x)^2");
+ask("cos(3x)", "4cos(x)^3 - 3cos(x)");
+ask("cosh(2x)", "2cosh(x)^2 - 1");
+ask("(sqrt(3) + sqrt(2))*(sqrt(3) - sqrt(2))", "1");
+
+// "identities" students write
+ask("sqrt(a^2 + b^2)", "a + b");
+ask("(a + b)^2", "a^2 + b^2");
+ask("sin(2x)", "2sin(x)");
+ask("log(x + y)", "log(x) + log(y)", { assume: { x: "positive", y: "positive" } });
+
+// true only with an assumption
+ask("sqrt(x^2)", "x");
+ask("sqrt(x^2)", "x", { assume: { x: "nonnegative" } });
+// equal wherever both sides are defined (the left side needs x ≥ 0)
+ask("sqrt(x)^2", "x");
+
+// close, and different: certified evaluation separates them
+ask("pi", "355/113");
+ask("exp(pi*sqrt(163))", "262537412640768744");
+
+// true, and beyond the normal form: the answer is "undecided", not a guess
+ask("atan(1/2) + atan(1/3)", "pi/4");
+"Ramanujan's constant misses that integer by about " + equal("exp(pi*sqrt(163))", "262537412640768744").witness.left.high.subtract(new Rational(262537412640768744n)).toNumber()
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

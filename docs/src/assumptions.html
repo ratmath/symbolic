@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Assumptions · RatMath Symbolic</title>
+<meta name="description" content="Assumptions on variables in @ratmath/symbolic: ranges, integers, and what can be proven from them.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Assumptions</div>
+<h1>Assumptions</h1>
+<p class="lede">Whether a step of algebra is valid often depends on what the letters stand for. An assumption says it: x is positive, n is an integer, t lies between 0 and 1. From assumptions the library proves signs, and it only uses a rule when the proof is there.</p>
+
+<h2>Stating them</h2>
+<pre><code>import { assume } from "@ratmath/symbolic";
+
+const A = assume({
+  x: "positive",            // also negative, nonnegative, nonpositive, nonzero, real
+  n: "integer, &gt;= 1",       // several facts, separated by commas
+  t: "in (0, 1]",           // an interval with open or closed ends
+  u: "&gt; 2",                 // a comparison with an exact number
+  w: "0:!w:5",              // a Core chain: 0 &lt; w ≤ 5
+  s: [0, 10],               // a closed interval as a pair
+});</code></pre>
+<p>A Core <code>RationalInterval</code> or <code>Region</code> is accepted as well, so the same object that describes a domain elsewhere in RatMath can be the assumption here. Every function that takes options accepts <code>{ assume: … }</code> with either the object above or the plain description.</p>
+
+<h2>What follows from them</h2>
+<pre><code>A.sign("x^2 + x + 1");        // "positive"
+A.sign("log(t)");             // "nonpositive"   (t ≤ 1)
+A.sign("x - u");              // "unknown"
+A.range("t*(1 - t)");         // { lo: 0, hi: 1, loClosed: true, hiClosed: false }: a bound, not the exact range
+A.proves("u^2 &gt; 4");          // true
+A.proves("x &lt; 0");            // false   (proven false)
+A.proves("x &gt; u");            // null    (undecided)
+A.proves("integer(n^2 + 3n)");   // true</code></pre>
+<p><code>proves</code> has three answers and only two of them are proofs. <code>null</code> means the library could not decide, which is different from the statement being false.</p>
+
+<h2>How a sign is proven</h2>
+<p>Three methods are tried in turn.</p>
+<p><strong>Interval arithmetic with unbounded ends.</strong> Each variable has a range such as \((0, \infty)\), and the range of an expression is bounded by combining ranges: \((0,\infty) + [1, 2] = (1, \infty)\), a square is \(\ge 0\), \(e^u &gt; 0\), \(\log\) of something \(&gt; 1\) is positive. Open and closed ends are tracked, which is what separates "positive" from "nonnegative". The bounds of \(\exp\), \(\log\) and the others at finite ends are certified enclosures from analytic.</p>
+<p><strong>Factoring.</strong> Interval arithmetic sees \(x^2 - 2x + 1\) as \([0,\infty) - (-\infty,\infty) + 1\), which says nothing. Factored as \((x - 1)^2\) it is plainly \(\ge 0\).</p>
+<p><strong>Counting real roots.</strong> A polynomial in one variable that has no real root in the variable's range cannot change sign there. A Sturm sequence counts the roots exactly, so \(x^2 - 2x + 2\) is proven positive for all real \(x\), and \(x^2 - 3x + 2\) is proven positive for \(x &gt; 2\).</p>
+<p>None of these is complete: a true inequality can come back <code>"unknown"</code>. What is guaranteed is the other direction: an answer other than unknown is a theorem.</p>
+<template data-runbox>
+const show = (A, c) =&gt; PRINT(String(A) || "(no assumptions)", " ⊢ ", c, " : ", A.proves(c));
+
+const none = assume({});
+show(none, "x^2 + 1 &gt; 0");
+show(none, "x^2 - 2x + 1 &gt;= 0");        // by factoring
+show(none, "x^4 - 4x^3 + 6x^2 - 4x + 2 &gt; 0");   // by counting roots: (x − 1)^4 + 1
+show(none, "x &gt; 0");                    // undecided
+
+const A = assume({ x: "positive", y: "positive" });
+show(A, "x*y + sqrt(x) &gt; 0");
+show(A, "x/(x + y) &lt; 1");
+show(A, "exp(-x) &lt; 1");
+show(A, "x - y &gt; 0");                   // undecided: it depends
+
+// AM-GM for two numbers, as a sign: (x + y)^2 − 4xy = (x − y)^2
+PRINT("sign of (x + y)^2 - 4xy:", A.sign("(x + y)^2 - 4*x*y"));
+
+// exact test points that satisfy the assumptions (used to tell expressions apart)
+assume({ n: "integer, &gt;= 1", t: "in (0, 1)" }).samples(["n", "t"], 4).map((p) =&gt; `n = ${p.n}, t = ${p.t}`)
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

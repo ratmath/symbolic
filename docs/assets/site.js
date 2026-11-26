@@ -1,8 +1,8 @@
 // Shared page furniture for the symbolic docs: the contents column, the theme
 // switch and the code boxes. Add each topic page to PAGES as it is written.
 
-import * as A from "./symbolic.js?v=b1c6b6b38b";
-import { mountRunboxes } from "./runbox.js?v=b1c6b6b38b";
+import * as A from "./symbolic.js?v=c3d6ae1986";
+import { mountRunboxes } from "./runbox.js?v=c3d6ae1986";
 
 export { A };
 
@@ -10,8 +10,12 @@ export const PAGES = [
   { href: "index.html", title: "Overview" },
   { href: "reference.html", title: "Reference" },
   { href: "explore.html", title: "Explore" },
-  // { group: "Topics" },
-  // { href: "topic.html", title: "A topic", blurb: "One line about it" },
+  { group: "Topics" },
+  { href: "expressions.html", title: "Expressions", blurb: "The shared tree: writing, substituting, differentiating, evaluating" },
+  { href: "assumptions.html", title: "Assumptions", blurb: "Say what the letters stand for, and prove signs from it" },
+  { href: "normal-forms.html", title: "Normal forms", blurb: "expand, factor, collect, and how roots, logs and sines are reduced" },
+  { href: "rules.html", title: "Rules", blurb: "Rewriting rules that carry their conditions and are checked when used" },
+  { href: "equality.html", title: "Equality", blurb: "Equal, different or undecided, and what each one proves" },
 ];
 
 export const h = (tag, attrs = {}, ...kids) => {
@@ -68,7 +72,7 @@ function chrome() {
     (group ?? sel).append(h("option", { value: p.href, selected: p.href === here }, p.title));
   }
   aside.append(
-    h("header", { class: "brand" }, h("a", { href: "index.html" }, h("div", { class: "mark" }, "RatMath ", h("span", {}, "symbolic"))), h("small", {}, "Rewriting, solving and closed forms")),
+    h("header", { class: "brand" }, h("a", { href: "index.html" }, h("div", { class: "mark" }, "RatMath ", h("span", {}, "symbolic"))), h("small", {}, "Algebra on expressions, checked")),
     sel, nav, theme(),
   );
 }
