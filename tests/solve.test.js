@@ -96,10 +96,10 @@ describe("trigonometric equations", () => {
     expect(String(r.solutions[0].member(1))).toBe("13*pi/6");
     expect(texts(solve("tan(x) = 1"))).toEqual(["pi/4 + n*pi"]);
     expect(texts(solve("sin(x) = cos(x)"))).toEqual(["pi/4 + n*pi"]);
-    expect(texts(solve("cos(2x) = 0"))).toEqual(["-pi/4 + n*pi", "pi/4 + n*pi"]);
+    expect(texts(solve("cos(2x) = 0"))).toEqual(["pi/4 + n*pi/2"]);
     expect(texts(solve("sin(x) = 2"))).toEqual([]);
     expect(texts(solve("sin(x) + cos(x) = 1"))).toEqual(["2*n*pi", "pi/2 + 2*n*pi"]);
-    expect(texts(solve("sin(2x) = sin(x)"))).toEqual(["-pi/3 + 2*n*pi", "2*n*pi", "pi/3 + 2*n*pi", "pi + 2*n*pi"]);
+    expect(texts(solve("sin(2x) = sin(x)"))).toEqual(["2*n*pi", "pi/3 + 2*n*pi/3"]);
     expect(texts(solve("2cos(x)^2 + 3sin(x) = 3"))).toEqual(["pi/6 + 2*n*pi", "pi/2 + 2*n*pi", "5*pi/6 + 2*n*pi"]);
   });
   test("members of every family satisfy the equation", () => {

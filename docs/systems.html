@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Systems of equations · RatMath Symbolic</title>
+<meta property="og:title" content="Systems of equations · RatMath Symbolic">
+<meta property="og:description" content="Symbolic algebra for RatMath: expressions, rewriting, solving and closed forms, with every step checked by the certified libraries.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ratmath.com/symbolic/systems.html">
+<meta name="description" content="Systems of equations with @ratmath/symbolic: Gauss–Jordan elimination with letters in the coefficients, families of solutions, substitution and resultants for nonlinear systems, every solution checked.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
+<link rel="stylesheet" href="assets/style.css?v=6be208ad0b">
+<script type="module" src="assets/site.js?v=6be208ad0b"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Systems</div>
+<h1>Systems of equations</h1>
+<p class="lede"><code>solveSystem</code> solves several equations in several unknowns: linear systems by elimination, letters and all, and nonlinear ones by substitution or by eliminating an unknown with the resultant. Every solution is put back into every equation.</p>
+<h2>Using it</h2>
+<pre><code>import { solveSystem } from "@ratmath/symbolic";
+
+String(solveSystem(["x + y = 3", "x - y = 1"]));
+// x = 2,  y = 1
+
+String(solveSystem(["2x + 3y - z = 1", "x - y + 2z = 4", "3x + y + z = 5"]));
+// x = 6/5,  y = 0,  z = 7/5
+
+String(solveSystem(["a*x + y = 1", "x - y = 0"], ["x", "y"]));
+// x = 1/(a + 1),  y = 1/(a + 1)
+//   provided a + 1 != 0
+
+String(solveSystem(["x + y + z = 1", "x - y = 0"]));
+// x = 1/2 - z/2,  y = 1/2 - z/2,  z = z   (z free)
+
+String(solveSystem(["x + y = 1", "2x + 2y = 3"]));
+// no solution
+
+String(solveSystem(["x^2 + y^2 = 25", "x + y = 7"]));
+// x = 3,  y = 4
+// x = 4,  y = 3</code></pre>
+<p>The unknowns default to every letter in the equations, in alphabetical order; pass them as the second argument when some letters are parameters. The result has <code>solutions</code> (each with <code>values</code>, <code>free</code> and <code>verified</code>), <code>complete</code>, <code>conditions</code>, <code>notes</code> and <code>steps</code>.</p>
+
+<h2>Linear systems: Gauss–Jordan with letters</h2>
+<p>When every equation is linear in the unknowns, the system is the matrix equation <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>A</mi><mi mathvariant="bold">x</mi><mo>=</mo><mi mathvariant="bold">b</mi></mrow><annotation encoding="application/x-tex">A\mathbf{x} = \mathbf{b}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.6833em;"></span><span class="mord mathnormal">A</span><span class="mord mathbf">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.6944em;"></span><span class="mord mathbf">b</span></span></span></span> and is reduced to reduced row echelon form. The entries are expressions, not just numbers, and each one is kept in <a href="normal-forms.html">normal form</a> as the rows are combined. A pivot must not be zero:</p>
+<ul>
+<li>a number that is not zero is used first;</li>
+<li>otherwise an entry with letters that is not proven zero is used, and the condition that it is not zero is returned, unless the assumptions already prove it.</li>
+</ul>
+<p>A row that ends as <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0</mn><mo>=</mo><mi>b</mi></mrow><annotation encoding="application/x-tex">0 = b</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.6444em;"></span><span class="mord">0</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.6944em;"></span><span class="mord mathnormal">b</span></span></span></span> decides the rest. If <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>b</mi></mrow><annotation encoding="application/x-tex">b</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.6944em;"></span><span class="mord mathnormal">b</span></span></span></span> is a nonzero number the system is <em>inconsistent</em> and has no solution. If <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>b</mi></mrow><annotation encoding="application/x-tex">b</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.6944em;"></span><span class="mord mathnormal">b</span></span></span></span> has letters, the equations agree only when <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>b</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">b = 0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.6944em;"></span><span class="mord mathnormal">b</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span>, and that is returned as a condition. Columns without a pivot are <em>free</em>: the unknowns there can take any value, and the others are written in terms of them. The number of free unknowns is the number of unknowns minus the rank.</p>
+<p>The linear algebra library, <a href="https://ratmath.com/linalg/">linalg</a>, solves systems with number entries much faster; this one is for coefficients with letters in them, which is where a first course spends its time (for which <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi></mrow><annotation encoding="application/x-tex">a</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.4306em;"></span><span class="mord mathnormal">a</span></span></span></span> does the system have one solution, none, infinitely many?).</p>
+
+<h2>Nonlinear systems</h2>
+<p><strong>Substitution.</strong> If some equation contains an unknown only to the first power, <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mtext> </mtext><mi>x</mi><mo>+</mo><mi>b</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">a\,x + b = 0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.6667em;vertical-align:-0.0833em;"></span><span class="mord mathnormal">a</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.6944em;"></span><span class="mord mathnormal">b</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span> with <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo separator="true">,</mo><mi>b</mi></mrow><annotation encoding="application/x-tex">a, b</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">a</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">b</span></span></span></span> free of <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi></mrow><annotation encoding="application/x-tex">x</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span></span></span></span>, it is solved for <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi><mo>=</mo><mo>−</mo><mi>b</mi><mi mathvariant="normal">/</mi><mi>a</mi></mrow><annotation encoding="application/x-tex">x = -b/a</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">−</span><span class="mord mathnormal">b</span><span class="mord">/</span><span class="mord mathnormal">a</span></span></span></span> and that is put into the other equations, leaving one unknown fewer. A number coefficient is preferred. When <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi></mrow><annotation encoding="application/x-tex">a</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.4306em;"></span><span class="mord mathnormal">a</span></span></span></span> contains other unknowns, the case <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">a = 0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.4306em;"></span><span class="mord mathnormal">a</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span> is solved separately, so that nothing is lost by dividing.</p>
+<p><strong>Elimination.</strong> When every equation is a polynomial, the resultant of two of them with respect to an unknown <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi></mrow><annotation encoding="application/x-tex">y</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.0359em;">y</span></span></span></span> is a polynomial without <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi></mrow><annotation encoding="application/x-tex">y</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.0359em;">y</span></span></span></span> that vanishes wherever both do. Eliminating one unknown at a time leaves one equation in one unknown, which <a href="solving.html"><code>solve</code></a> handles; each value is then carried back and the next unknown found. A resultant can have roots that belong to no solution, which is one reason every candidate is checked at the end.</p>
+<p><strong>The check.</strong> Each candidate is substituted into every equation as written, and the difference of the two sides must reduce to 0 in normal form. A candidate that fails is dropped; one that cannot be decided is left out and noted, and the answer is marked incomplete.</p>
+<p>What is not handled: values with no closed form (a root of a quintic) are noted and not followed, and a curve of solutions (two equations with a common factor) is reported as incomplete.</p>
+<section class="runbox" aria-label="Runnable code">
+  <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/symbolic</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math.</span></div>
+  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">// For which a does this system have one solution, none, or infinitely many?
+const sys = (a) =&gt; solveSystem([`x + ${a}*y = 1`, `${a}*x + y = 1`], ["x", "y"]);
+PRINT("general a:", String(solveSystem(["x + a*y = 1", "a*x + y = 1"], ["x", "y"])));
+for (const a of ["-1", "1", "2"]) PRINT(`a = ${a}:`.padEnd(8), String(sys(a)).replace(/\n/g, " |"));
+
+// A circle and a line, a circle and a parabola, a hyperbola and a circle
+for (const eqs of [
+  ["x^2 + y^2 = 25", "y = x + 1"],
+  ["x^2 + y^2 = 1", "y = x^2 - 1"],
+  ["x*y = 1", "x^2 + y^2 = 3"],
+]) PRINT(eqs.join(",  "), "\n   ", String(solveSystem(eqs)).replace(/\n/g, "\n    "));
+
+// Three unknowns
+solveSystem(["x + y + z = 6", "x*y = 2", "x - y = 1"]).toString()</textarea>
+  <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
+  <div class="runbox-out" aria-live="polite"></div>
+</section>
+<footer class="sitelinks"><a href="https://github.com/ratmath/symbolic">GitHub</a> · <a href="https://ratmath.com/">ratmath.com</a> · <a href="https://ratmath.com/shelf/">shelf</a> · <a href="https://ratmath.com/core/">core</a></footer>
+</article>
+</main>
+</div>
+</body>
+</html>

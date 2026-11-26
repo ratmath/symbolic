@@ -32,7 +32,7 @@ String(limit("(1 + 1/x)^x", "x", "inf"));    // e
 String(taylor("tan(x)", "x", 0, 5));         // x + 1/3*x^3 + 2/15*x^5 + …
 ```
 
-## What is here (phases 1 to 3)
+## What is here (phases 1 to 5, all built)
 
 - **Expressions.** `sym(text)` wraps the same plain tree `@ratmath/analytic`
   and `@ratmath/graphics` use (`expr.tree`), with substitution, derivatives,
@@ -65,13 +65,31 @@ String(taylor("tan(x)", "x", 0, 5));         // x + 1/3*x^3 + 2/15*x^5 + …
   says when the two sides differ. `taylor` gives exact coefficients, and a
   Laurent expansion at a pole.
 
-Still to come: systems, sums, and step records for every operation. See the
-[library roadmap](https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#9-a-symbolic-algebra-package-ratmathsymbolic).
+- **Trigonometric families.** Every family of solutions, merged to the
+  smallest period (`sin(3x) = 0` is `n*pi/3`); letters on the other side
+  with their condition (`sin(x) = a` needs `abs(a) <= 1`); products and powers
+  reduced to multiple angles.
+- **Systems.** `solveSystem(equations, unknowns)`: Gauss–Jordan with letters
+  in the coefficients (pivot conditions returned), free unknowns for a
+  family, substitution and resultants for nonlinear systems. Every solution is
+  put back into every equation.
+- **Sums.** `sum(f, "k", from, to)`: sums of powers, polynomial times
+  geometric, telescoping rational sums, infinite sums by limits, a short table
+  of famous values (checked against an exact partial sum and a proven tail
+  bound), and divergence. Each closed form comes from an antidifference that
+  is proven first.
+- **Step records.** `explain.expand(…)`, `explain.solve(…)` and the rest return
+  a `Derivation`: the result and the named steps, each marked `proven`,
+  `test points` or `by the result`. A step that could not be checked is not
+  shown.
+
+See the [library roadmap](https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#9-a-symbolic-algebra-package-ratmathsymbolic).
 
 ## Layout
 
 - `index.js`, `src/`: the library. `src/expr.js` (expressions), `assume.js`,
-  `normal.js`, `rewrite.js`, `equal.js`, `solve.js`, `calculus.js`.
+  `normal.js`, `rewrite.js`, `equal.js`, `solve.js`, `calculus.js`,
+  `system.js`, `sums.js`, `steps.js`.
 - `tests/`: `bun run test`.
 - `vendor/analytic`, `vendor/algebraic`, `vendor/structures`: git submodules,
   used as bun workspaces until those packages are on npm. Clone with

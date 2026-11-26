@@ -21,7 +21,7 @@
 <p class="lede">Expand, factor and simplify expressions the way a computer algebra system does, with one difference: the exact and certified libraries sit underneath, so an answer says whether it is proven, refuted or undecided and is never just asserted.</p>
 
 <h2>What is here</h2>
-<p>Expressions, assumptions, rewriting and equality; solving equations and inequalities in one variable; antiderivatives, limits and expansions. Systems of equations, sums and full step records are planned and listed at the bottom of this page.</p>
+<p>Expressions, assumptions, rewriting and equality; solving equations and inequalities in one variable, with whole families of solutions for trigonometric equations; systems of equations; antiderivatives, limits, expansions and sums in closed form; and, for every operation, the checked steps that produced the answer.</p>
 <div class="cards" id="cards"></div>
 
 <h2>A first program</h2>
@@ -46,6 +46,13 @@ String(solveInequality("(x - 1)/(x + 2) &lt;= 0"));   // (-2, 1]
 String(integrate("x*exp(x)"));                 // x*exp(x) - exp(x) + C   (proven: its derivative is the integrand)
 String(limit("(1 + 1/x)^x", "x", "inf").value);    // e
 String(taylor("tan(x)", "x", 0, 5).polynomial);    // x + 1/3*x^3 + 2/15*x^5</code></pre>
+<p>Systems, sums and step records work the same way.</p>
+<pre><code>import { solveSystem, sum, explain } from "@ratmath/symbolic";
+
+String(solveSystem(["a*x + y = 1", "x - y = 0"], ["x", "y"]));   // x = 1/(a + 1),  y = 1/(a + 1), provided a + 1 != 0
+String(sum("k^3", "k", 1, "n").value);           // n^2*(n + 1)^2/4, proven by its antidifference
+String(sum("1/(k*(k+1))", "k", 1, "inf").value); // 1
+String(explain.factor("x^4 - 1"));               // each step, and how it was checked</code></pre>
 
 <h2>Four ideas</h2>
 <p><strong>Equality has three answers.</strong> Two expressions are <em>proven equal</em> when they reduce to the same normal form, <em>proven different</em> when a certified evaluation at an exact point separates them, and <em>undecided</em> otherwise. A numerical agreement is never reported as equality. See <a href="equality.html">Equality</a>.</p>
@@ -53,15 +60,15 @@ String(taylor("tan(x)", "x", 0, 5).polynomial);    // x + 1/3*x^3 + 2/15*x^5</co
 <p><strong>Answers are checked before they are returned.</strong> A solution is substituted into the original equation, and an extraneous root is reported as rejected. An antiderivative is differentiated and compared with the integrand. A limit is compared with a certified enclosure. See <a href="solving.html">Solving</a>, <a href="antiderivatives.html">Antiderivatives</a> and <a href="limits.html">Limits</a>.</p>
 <p><strong>Rewrites are checked.</strong> Each application of a rule is compared at exact test points with certified arithmetic, so a rule that is simply wrong is caught the first time it is used.</p>
 
-<h2>What is planned</h2>
-<p>From the <a href="https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#9-a-symbolic-algebra-package-ratmathsymbolic">library roadmap</a>. Sizes are rough estimates in lines of source.</p>
+<h2>Phases</h2>
+<p>All five phases from the <a href="https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#9-a-symbolic-algebra-package-ratmathsymbolic">library roadmap</a>. are built.</p>
 <div class="tablewrap"><table class="plan">
-<tr><th>Phase</th><th>Contents</th><th>Estimate</th></tr>
+<tr><th>Phase</th><th>Contents</th><th>Status</th></tr>
 <tr><td>1</td><td>Expressions, assumptions, rewriting, three-way equality</td><td>built</td></tr>
 <tr><td>2</td><td>Solving equations and inequalities in one variable</td><td>built</td></tr>
 <tr><td>3</td><td>Antiderivatives with verification; limits; expansions</td><td>built</td></tr>
-<tr><td>4</td><td>Systems, trigonometric families, sums</td><td>900</td></tr>
-<tr><td>5</td><td>Step records for every operation</td><td>700</td></tr>
+<tr><td>4</td><td>Systems, trigonometric families, sums</td><td>built</td></tr>
+<tr><td>5</td><td>Step records for every operation</td><td>built</td></tr>
 </table></div>
 <p>It builds on Core, <a href="https://ratmath.com/analytic/">analytic</a> (the expression tree, derivatives, enclosures), <a href="https://ratmath.com/algebraic/">algebraic</a> (factoring) and <a href="https://ratmath.com/structures/">structures</a> (polynomials in several variables).</p>
 <template data-runbox>
@@ -86,8 +93,10 @@ PRINT(solve("sqrt(x + 3) = x - 3").toString());
 PRINT(integrate("x^2*sin(x)").toString());
 PRINT(limit("(1 - cos(x))/x^2", "x", 0).toString());
 
-// What is still planned
-plan.map((p) =&gt; `${p.phase}. ${p.contents}`)
+// Systems and sums, and the steps behind an answer
+PRINT(solveSystem(["x^2 + y^2 = 25", "x + y = 7"]).toString());
+PRINT(sum("k*2^k", "k", 0, "n").toString());
+String(explain.solve("2sin(x)^2 = 1"))
 </template>
 </article>
 </main>
