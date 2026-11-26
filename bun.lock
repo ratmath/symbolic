@@ -5,6 +5,40 @@
     "": {
       "name": "@ratmath/symbolic",
       "dependencies": {
+        "@ratmath/algebraic": "^0.1.0",
+        "@ratmath/analytic": "^0.1.0",
+        "@ratmath/core": "^0.10.0",
+        "@ratmath/structures": "^0.1.0",
+      },
+      "devDependencies": {
+        "katex": "0.19.1",
+      },
+    },
+    "vendor/algebraic": {
+      "name": "@ratmath/algebraic",
+      "version": "0.1.0",
+      "dependencies": {
+        "@ratmath/core": "^0.10.0",
+      },
+      "devDependencies": {
+        "katex": "0.19.1",
+      },
+    },
+    "vendor/analytic": {
+      "name": "@ratmath/analytic",
+      "version": "0.1.0",
+      "dependencies": {
+        "@ratmath/core": "^0.10.0",
+      },
+      "devDependencies": {
+        "katex": "0.19.1",
+      },
+    },
+    "vendor/structures": {
+      "name": "@ratmath/structures",
+      "version": "0.1.0",
+      "dependencies": {
+        "@ratmath/algebraic": "^0.1.0",
         "@ratmath/core": "^0.10.0",
       },
       "devDependencies": {
@@ -13,7 +47,13 @@
     },
   },
   "packages": {
+    "@ratmath/algebraic": ["@ratmath/algebraic@workspace:vendor/algebraic"],
+
+    "@ratmath/analytic": ["@ratmath/analytic@workspace:vendor/analytic"],
+
     "@ratmath/core": ["@ratmath/core@0.10.0", "", {}, "sha512-+lw3Eclhc9aDc2QPGpPpf6cgE4IqifgCXgunjaM/XKgDMJzL6YF/rPB8pBOgUd7krM+mzz8XSXKhL8kpdgOQsw=="],
+
+    "@ratmath/structures": ["@ratmath/structures@workspace:vendor/structures"],
 
     "commander": ["commander@15.1.0", "", {}, "sha512-cgnQ88TRrWcC7pVq46RzJVRMktu3W2RcbnoidnfBsl1bmDCBwJS/udcIZpKoCrbAYYaCqsz1yZCVIgbIaU3ddQ=="],
 

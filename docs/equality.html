@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Equality · RatMath Symbolic</title>
+<meta property="og:title" content="Equality · RatMath Symbolic">
+<meta property="og:description" content="Symbolic algebra for RatMath: expressions, rewriting, solving and closed forms, with every step checked by the certified libraries.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ratmath.com/symbolic/equality.html">
+<meta name="description" content="Equality of expressions with three answers in @ratmath/symbolic: proven equal, proven different, or undecided.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
+<link rel="stylesheet" href="assets/style.css?v=c3d6ae1986">
+<script type="module" src="assets/site.js?v=c3d6ae1986"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Equality</div>
+<h1>Equal, different, or undecided</h1>
+<p class="lede">Asking whether two expressions are equal has no general algorithm. The honest reply has three values, and two of them come with a proof.</p>
+
+<h2>The three answers</h2>
+<pre><code>import { equal } from "@ratmath/symbolic";
+
+const a = equal("(x + 1)^2", "x^2 + 2x + 1");
+a.verdict;      // "equal"
+a.method;       // "normal form"
+
+const b = equal("sqrt(x^2)", "x");
+b.verdict;      // "different"
+b.witness;      // { point: { x: -2/3 }, left: [0.666…], right: [-0.666…] }   exact point, certified enclosures
+
+const c = equal("atan(1)", "pi/4");
+c.verdict;      // "undecided"
+c.agreedAt;     // 1   test point where the enclosures overlapped, which proves nothing
+c.value;        // null   (true / false / null for the three verdicts)</code></pre>
+<p><strong>Equal</strong> is a proof by <a href="normal-forms.html">normal form</a>: the difference of the two expressions reduces to zero using only relations that hold wherever the expressions are defined. It means equal wherever both sides are defined, under the assumptions given.</p>
+<p><strong>Different</strong> is a proof by witness: at an exact rational point that satisfies the assumptions, certified interval evaluation of the two sides gives intervals that do not meet. For expressions without variables the precision is raised (to about 4,000 bits) before giving up, so <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>π</mi></mrow><annotation encoding="application/x-tex">\pi</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.0359em;">π</span></span></span></span> against <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>22</mn><mi mathvariant="normal">/</mi><mn>7</mn></mrow><annotation encoding="application/x-tex">22/7</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">22/7</span></span></span></span>, or <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msqrt><mn>2</mn></msqrt></mrow><annotation encoding="application/x-tex">\sqrt2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1.04em;vertical-align:-0.1328em;"></span><span class="mord sqrt"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9072em;"><span class="svg-align" style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord" style="padding-left:0.833em;">2</span></span><span style="top:-2.8672em;"><span class="pstrut" style="height:3em;"></span><span class="hide-tail" style="min-width:0.853em;height:1.08em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="1.08em" viewBox="0 0 400000 1080" preserveAspectRatio="xMinYMin slice"><path d="M95,702
+c-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14
+c0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54
+c44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10
+s173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429
+c69,-144,104.5,-217.7,106.5,-221
+l0 -0
+c5.3,-9.3,12,-14,20,-14
+H400000v40H845.2724
+s-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7
+c-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z
+M834 80h400000v40h-400000z"/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.1328em;"><span></span></span></span></span></span></span></span></span> against a decimal, is settled quickly.</p>
+<p><strong>Undecided</strong> means neither. The normal form does not know the identity and no test point separated the two sides. The library reports how many points agreed, and does not turn that into a claim.</p>
+
+<h2>Why not just compare numerically?</h2>
+<p>Because agreement to many digits is not equality. The expressions</p>
+<span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msup><mi>e</mi><mrow><mi>π</mi><msqrt><mn>163</mn></msqrt></mrow></msup><mspace width="2em"/><mtext>and</mtext><mspace width="2em"/><mn>262537412640768744</mn></mrow><annotation encoding="application/x-tex"> e^{\pi\sqrt{163}} \qquad\text{and}\qquad 262537412640768744 </annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1.052em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:1.052em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.0359em;">π</span><span class="mord sqrt mtight"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9128em;"><span class="svg-align" style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mtight" style="padding-left:0.833em;"><span class="mord mtight">163</span></span></span><span style="top:-2.8728em;"><span class="pstrut" style="height:3em;"></span><span class="hide-tail mtight" style="min-width:0.853em;height:1.08em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="1.08em" viewBox="0 0 400000 1080" preserveAspectRatio="xMinYMin slice"><path d="M95,702
+c-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14
+c0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54
+c44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10
+s173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429
+c69,-144,104.5,-217.7,106.5,-221
+l0 -0
+c5.3,-9.3,12,-14,20,-14
+H400000v40H845.2724
+s-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7
+c-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z
+M834 80h400000v40h-400000z"/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.1272em;"><span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:2em;"></span><span class="mord text"><span class="mord">and</span></span><span class="mspace" style="margin-right:2em;"></span><span class="mord">262537412640768744</span></span></span></span></span>
+<p>agree to twelve decimal places after the point and are different numbers. With certified arithmetic the difference is found once enough precision is used, and it is a proof. In the other direction, no amount of numerical agreement can prove an identity, so the library does not try.</p>
+<p>There is also a theorem behind the third answer. Richardson showed in 1968 that for expressions built from the rationals, <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>π</mi></mrow><annotation encoding="application/x-tex">\pi</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.0359em;">π</span></span></span></span>, <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>log</mi><mo>⁡</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">\log 2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mop">lo<span style="margin-right:0.0139em;">g</span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">2</span></span></span></span>, a variable, <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>sin</mi><mo>⁡</mo></mrow><annotation encoding="application/x-tex">\sin</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.6679em;"></span><span class="mop">sin</span></span></span></span>, <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>exp</mi><mo>⁡</mo></mrow><annotation encoding="application/x-tex">\exp</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mop">exp</span></span></span></span> and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∣</mi><mo>⋅</mo><mi mathvariant="normal">∣</mi></mrow><annotation encoding="application/x-tex">|\cdot|</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣</span></span></span></span>, no algorithm decides whether an expression is identically zero. A system that always answers yes or no must sometimes be wrong.</p>
+
+<h2>Assumptions change the answer</h2>
+<pre><code>String(equal("log(a*b)", "log(a) + log(b)"));
+// "undecided …": they agree wherever both are defined, but the rule is not valid in general
+
+String(equal("log(a*b)", "log(a) + log(b)", { assume: { a: "positive", b: "positive" } }));
+// "equal (normal form, after the rules the assumptions allow)"
+
+String(equal("(a^b)^c", "a^(b*c)", { assume: { a: "positive" } }));   // equal</code></pre>
+<p>With assumptions, <code>equal</code> first applies the <a href="rules.html">rules</a> whose conditions it can prove (powers, logarithms, angle sums) and then compares normal forms. For hyperbolic functions it also tries writing them through the exponential, which is how <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>cosh</mi><mo>⁡</mo><mi>x</mi><mo>+</mo><mi>sinh</mi><mo>⁡</mo><mi>x</mi><mo>=</mo><msup><mi>e</mi><mi>x</mi></msup></mrow><annotation encoding="application/x-tex">\cosh x + \sinh x = e^x</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.7778em;vertical-align:-0.0833em;"></span><span class="mop">cosh</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.6944em;"></span><span class="mop">sinh</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.6644em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.6644em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">x</span></span></span></span></span></span></span></span></span></span></span> is proven.</p>
+
+<h2>Simplifying</h2>
+<p><code>simplify</code> uses the same machinery and returns an expression that is proven equal to its input wherever the input is defined: the smallest of the normal form, the factored form, and the normal form after the provable rules.</p>
+<pre><code>String(simplify("(x^2 - 1)/(x - 1)"));                                          // "x + 1"
+String(simplify("sqrt(a^2*b)", { assume: { a: "positive", b: "positive" } }));  // "a*sqrt(b)"
+String(simplify("sin(x)^4 - cos(x)^4"));                                        // "1 - 2*cos(x)^2"</code></pre><section class="runbox" aria-label="Runnable code">
+  <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/symbolic</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math.</span></div>
+  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">const ask = (a, b, opts) =&gt; PRINT(`${a}  ≟  ${b}${opts ? "   given " + assume(opts.assume) : ""}\n    ${equal(a, b, opts)}`);
+
+// identities a course proves
+ask("tan(x)^2 + 1", "1/cos(x)^2");
+ask("cos(3x)", "4cos(x)^3 - 3cos(x)");
+ask("cosh(2x)", "2cosh(x)^2 - 1");
+ask("(sqrt(3) + sqrt(2))*(sqrt(3) - sqrt(2))", "1");
+
+// "identities" students write
+ask("sqrt(a^2 + b^2)", "a + b");
+ask("(a + b)^2", "a^2 + b^2");
+ask("sin(2x)", "2sin(x)");
+ask("log(x + y)", "log(x) + log(y)", { assume: { x: "positive", y: "positive" } });
+
+// true only with an assumption
+ask("sqrt(x^2)", "x");
+ask("sqrt(x^2)", "x", { assume: { x: "nonnegative" } });
+// equal wherever both sides are defined (the left side needs x ≥ 0)
+ask("sqrt(x)^2", "x");
+
+// close, and different: certified evaluation separates them
+ask("pi", "355/113");
+ask("exp(pi*sqrt(163))", "262537412640768744");
+
+// true, and beyond the normal form: the answer is "undecided", not a guess
+ask("atan(1/2) + atan(1/3)", "pi/4");
+"Ramanujan's constant misses that integer by about " + equal("exp(pi*sqrt(163))", "262537412640768744").witness.left.high.subtract(new Rational(262537412640768744n)).toNumber()</textarea>
+  <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
+  <div class="runbox-out" aria-live="polite"></div>
+</section>
+<footer class="sitelinks"><a href="https://github.com/ratmath/symbolic">GitHub</a> · <a href="https://ratmath.com/">ratmath.com</a> · <a href="https://ratmath.com/shelf/">shelf</a> · <a href="https://ratmath.com/core/">core</a></footer>
+</article>
+</main>
+</div>
+</body>
+</html>

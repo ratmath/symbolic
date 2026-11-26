@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Symbolic algebra Explorer</title>
-<meta property="og:title" content="Symbolic algebra Explorer">
+<title>Explore · RatMath Symbolic</title>
+<meta property="og:title" content="Explore · RatMath Symbolic">
 <meta property="og:description" content="Symbolic algebra for RatMath: expressions, rewriting, solving and closed forms, with every step checked by the certified libraries.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://ratmath.com/symbolic/explore.html">
-<meta name="description" content="Try @ratmath/symbolic without writing a program.">
+<meta name="description" content="Try @ratmath/symbolic without writing code: expand, factor, simplify, and test equality under assumptions.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=b1c6b6b38b">
-<script type="module" src="assets/site.js?v=b1c6b6b38b"></script>
+<link rel="stylesheet" href="assets/style.css?v=c3d6ae1986">
+<script type="module" src="assets/site.js?v=c3d6ae1986"></script>
 </head>
 <body>
 <div class="shell">
@@ -22,18 +22,40 @@
 <article>
 <div class="eyebrow">Explore</div>
 <h1>Explore</h1>
-<p class="lede">This page will be a calculator for everything in the library: type an expression, see an exact answer, click an example to change it.</p>
-<p class="notice"><strong>Planned, not built yet.</strong> This site is the frame the package will grow into. The full plan is in the <a href="https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#9-a-symbolic-algebra-package-ratmathsymbolic">library roadmap</a>, and the <a href="https://ratmath.com/shelf/">RatMath Shelf</a> page lists what exists across all the libraries.</p>
-<p>There is nothing to explore yet. The first phase is: <strong>Expressions, assumptions, rewriting, three-way equality</strong>. When it is built its operations appear here.</p>
-<p>In the meantime the code box below runs JavaScript with <code>@ratmath/core</code> in scope.</p>
+<p class="lede">Type an expression, state what you assume about its letters, and see each form of it. Then put a second expression beside it and ask whether the two are equal.</p>
+
+<div class="demo">
+<div class="demo-row"><label for="ex-a">Expression</label><input id="ex-a" class="text grow" value="sqrt(x^2 + 2x + 1) + (x^2 - 1)/(x - 1)" spellcheck="false" autocapitalize="off"></div>
+<div class="demo-row"><label for="ex-as">Assume</label><input id="ex-as" class="text grow" value="" placeholder="x: positive; n: integer; t: in (0, 1)" spellcheck="false" autocapitalize="off"></div>
+<div class="demo-row" id="ex-chips"></div>
+<div id="ex-forms"></div>
+</div>
+
+<h2>Are these equal?</h2>
+<div class="demo">
+<div class="demo-row"><label for="ex-b">Compare with</label><input id="ex-b" class="text grow" value="2x + 2" spellcheck="false" autocapitalize="off"></div>
+<div class="out" id="ex-eq"></div>
+</div>
+
+<h2>Apply rules</h2>
+<div class="demo">
+<div class="demo-row"><label for="ex-rules">Rule set</label><select id="ex-rules"><option value="powers">powers and roots</option><option value="logs.expand">logarithms: expand</option><option value="logs.combine">logarithms: combine</option><option value="trig.expand" selected>trigonometry: expand</option><option value="trig.reduce">trigonometry: reduce powers</option><option value="hyperbolic">hyperbolic by exp</option></select>
+<label><input type="checkbox" id="ex-cond"> apply undecided rules and list their conditions</label></div>
+<div class="out" id="ex-rw"></div>
+</div>
+
+<p>Assumptions are written as <code>name: fact</code>, separated by semicolons. A fact is a word (<code>positive</code>, <code>negative</code>, <code>nonnegative</code>, <code>nonzero</code>, <code>integer</code>), a comparison (<code>&gt; 2</code>) or an interval (<code>in (0, 1]</code>). See <a href="assumptions.html">Assumptions</a>.</p>
 <section class="runbox" aria-label="Runnable code">
   <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/symbolic</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math.</span></div>
-  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">// Core's exact numbers are available here.
-const third = new Rational(1, 3);
-PRINT("1/3 + 1/6 =", third.add(new Rational(1, 6)).toString());
-PRINT("(2/3)^10 =", new Rational(2, 3).pow(10).toString());
-PRINT("0.1 + 0.2 in floating point:", 0.1 + 0.2, "  exactly:", new Rational(1, 10).add(new Rational(2, 10)).toString());
-plan[0].contents</textarea>
+  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">// The page above, as code.
+const A = assume({ x: "&gt; -1" });
+const e = sym("sqrt(x^2 + 2x + 1) + (x^2 - 1)/(x - 1)");
+PRINT("expand:  ", e.expand({ assume: A }).toString());
+PRINT("factor:  ", e.factor({ assume: A }).toString());
+PRINT("simplify:", e.simplify({ assume: A }).toString());
+PRINT("equal to 2x + 2?", e.equals("2x + 2", { assume: A }).toString());
+PRINT("without the assumption:", e.equals("2x + 2").toString());
+rewrite("sin(x + y)*cos(x - y)", rules.trig.expand).expr.expand().toString()</textarea>
   <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
   <div class="runbox-out" aria-live="polite"></div>
 </section>
@@ -41,5 +63,87 @@ plan[0].contents</textarea>
 </article>
 </main>
 </div>
+<script type="module">
+import { A as S, h } from "./assets/site.js?v=c3d6ae1986";
+const $ = (id) => document.getElementById(id);
+const EXAMPLES = [
+  ["sqrt(x^2 + 2x + 1) + (x^2 - 1)/(x - 1)", "", "2x + 2"],
+  ["sqrt(x^2 + 2x + 1) + (x^2 - 1)/(x - 1)", "x: > -1", "2x + 2"],
+  ["sin(x + y)", "", "sin(x)cos(y) + cos(x)sin(y)"],
+  ["log(a^2*b)", "a: positive; b: positive", "2log(a) + log(b)"],
+  ["(sqrt(2) + sqrt(3))^2", "", "5 + 2sqrt(6)"],
+  ["exp(2x) - 1", "", "(exp(x) - 1)*(exp(x) + 1)"],
+  ["cosh(x)^2 - sinh(x)^2", "", "1"],
+  ["(a + b)^2", "", "a^2 + b^2"],
+  ["x^4 - 5x^2 + 4", "", "(x^2 - 1)*(x^2 - 4)"],
+];
+function readAssume(text) {
+  const spec = {};
+  for (const part of text.split(";")) {
+    const m = /^\s*([A-Za-z]\w*)\s*:\s*(.+?)\s*$/.exec(part);
+    if (m) spec[m[1]] = spec[m[1]] ? `${spec[m[1]]}, ${m[2]}` : m[2];
+    else if (part.trim()) throw new SyntaxError(`write assumptions as "x: positive", not "${part.trim()}"`);
+  }
+  return S.assume(spec);
+}
+const line = (label, f) => {
+  let text;
+  let bad = false;
+  try {
+    text = f();
+  } catch (e) {
+    text = e.message;
+    bad = true;
+  }
+  return [h("dt", {}, label), h("dd", { style: bad ? "color: var(--muted)" : null }, text)];
+};
+function update() {
+  const a = $("ex-a").value;
+  const forms = $("ex-forms");
+  const eq = $("ex-eq");
+  const rw = $("ex-rw");
+  let As;
+  try {
+    As = readAssume($("ex-as").value);
+  } catch (e) {
+    forms.replaceChildren(h("div", { class: "out err" }, e.message));
+    return;
+  }
+  const o = { assume: As };
+  forms.replaceChildren(h("dl", { class: "kv out" },
+    line("read as", () => String(S.sym(a))),
+    line("expand", () => String(S.expand(a, o))),
+    line("factor", () => String(S.factor(a, o))),
+    line("simplify", () => String(S.simplify(a, o))),
+    line("cancelled", () => S.normal(a, o).cancelled.map((c) => `${c} ≠ 0`).join(", ") || "nothing"),
+    line("sign", () => As.sign(a)),
+    line("d/dx", () => String(S.sym(a).diff("x"))),
+  ));
+  eq.replaceChildren(h("dl", { class: "kv" }, line("verdict", () => String(S.equal(a, $("ex-b").value, o)))));
+  rw.replaceChildren(h("dl", { class: "kv" }, ...(() => {
+    try {
+      const set = $("ex-rules").value.split(".").reduce((r, k) => r[k], S.rules);
+      const r = S.rewrite(a, set, { assume: As, conditional: $("ex-cond").checked });
+      return [
+        line("result", () => String(r.expr)),
+        ...r.steps.map((s) => line(s.rule, () => `${s.from}  →  ${s.to}`)),
+        ...r.blocked.map((b) => line("not used", () => `${b.rule} at ${b.at}: needs ${b.needs.join(" and ")}`)),
+        ...(r.conditions.length ? [line("holds when", () => r.conditions.join(" and "))] : []),
+        ...(r.steps.length || r.blocked.length ? [] : [line("", () => "no rule in this set applies")]),
+      ];
+    } catch (e) {
+      return [line("", () => e.message)];
+    }
+  })()));
+}
+$("ex-chips").append(...EXAMPLES.map(([a, as, b]) => h("button", { class: "chipbtn", onclick: () => {
+  $("ex-a").value = a;
+  $("ex-as").value = as;
+  $("ex-b").value = b;
+  update();
+} }, as ? `${a}  (${as})` : a)));
+for (const id of ["ex-a", "ex-as", "ex-b", "ex-rules", "ex-cond"]) $(id).addEventListener("input", update);
+update();
+</script>
 </body>
 </html>

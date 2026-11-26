@@ -1,13 +1,8 @@
 // What this package is planned to contain, phase by phase, from the RatMath
-// library roadmap. Nothing here is built yet; a phase is removed from this list
+// library roadmap. Phase 1 is built; a phase is removed from this list
 // when it ships, and the list goes away when it is empty.
 
 export const plan = Object.freeze([
-  {
-    "phase": 1,
-    "contents": "Expressions, assumptions, rewriting, three-way equality",
-    "estimate": "1,500"
-  },
   {
     "phase": 2,
     "contents": "Solving equations and inequalities in one variable",

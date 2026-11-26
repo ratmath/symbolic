@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Expressions · RatMath Symbolic</title>
+<meta property="og:title" content="Expressions · RatMath Symbolic">
+<meta property="og:description" content="Symbolic algebra for RatMath: expressions, rewriting, solving and closed forms, with every step checked by the certified libraries.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ratmath.com/symbolic/expressions.html">
+<meta name="description" content="Expressions in @ratmath/symbolic: the shared tree, substitution, derivatives, certified evaluation and TeX.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
+<link rel="stylesheet" href="assets/style.css?v=c3d6ae1986">
+<script type="module" src="assets/site.js?v=c3d6ae1986"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Expressions</div>
+<h1>Expressions</h1>
+<p class="lede">An expression is a tree: numbers, variables and constants at the leaves, operations and functions above them. This package uses the same tree as analytic and graphics, so nothing needs converting between them.</p>
+
+<h2>Writing one</h2>
+<p><code>sym(text)</code> reads calculator notation and returns an <code>Expr</code>. Numbers are exact: <code>0.1</code> is the fraction 1/10, not a floating-point number.</p>
+<pre><code>import { sym } from "@ratmath/symbolic";
+
+const f = sym("2x^2 + 3sin(x) - 0.5");
+String(f);            // "2*x^2 + 3*sin(x) - 1/2"
+f.variables;          // ["x"]
+f.toTeX();            // "2\\,x^{2} + 3\\,\\sin\\left(x\\right) - \\frac{1}{2}"
+f.tree;               // the plain tree: { type: "op", op: "-", args: [...] }</code></pre>
+<p>The grammar is the one the rest of RatMath uses: <code>+ - * / ^</code>, parentheses, implicit multiplication after a number or a closing bracket (<code>2x</code>, <code>3(x + 1)</code>, <code>2sin(x)</code>), <code>^</code> binding tighter than a leading minus (so <code>-x^2</code> is <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>−</mo><mo stretchy="false">(</mo><msup><mi>x</mi><mn>2</mn></msup><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">-(x^2)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1.0641em;vertical-align:-0.25em;"></span><span class="mord">−</span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal">x</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span>), and the functions <code>sqrt cbrt abs exp log sin cos tan asin acos atan sinh cosh tanh</code>. <code>log</code> and <code>ln</code> are both the natural logarithm. <code>pi</code> and <code>e</code> are the constants.</p>
+
+<h2>The tree</h2>
+<p>A tree node is one of five plain objects:</p>
+<pre><code>{ type: "num", value: Rational }
+{ type: "var", name: "x" }
+{ type: "const", name: "pi" }            // or "e"
+{ type: "op", op: "+", args: [a, b] }    // + - * / ^ and "neg" with one argument
+{ type: "call", name: "sin", args: [a] }</code></pre>
+<p>Every function of this package accepts text, an <code>Expr</code> or such a tree, and <code>expr.tree</code> hands the tree to analytic's <code>fn</code> or graphics' plots. The builders <code>num</code>, <code>v</code>, <code>op</code> and <code>call</code> make nodes directly.</p>
+
+<h2>Substituting, differentiating, evaluating</h2>
+<pre><code>const g = sym("x^2 + y");
+String(g.subs({ x: "y + 1", y: "x" }));   // "(y + 1)^2 + x"   (both at once)
+String(sym("x^2*sin(x)").diff("x"));      // "2*x*sin(x) + x^2*cos(x)"
+
+const iv = sym("sqrt(2) + pi").evaluate({}, 64);   // a Core RationalInterval certain to hold the value
+sym("x/3").approx({ x: 1 });                       // 0.3333333333333333, the midpoint of such an interval</code></pre>
+<p><code>evaluate</code> is certified: the interval it returns has exact rational ends and is guaranteed to contain the true value. It is what the rest of the package uses to tell two expressions apart. It takes exact values for the variables and a number of bits of accuracy, and throws where the expression is undefined.</p>
+<p>Mathematically, substitution is composition of functions and the tree is the function's definition; two different trees can define the same function. Deciding when they do is the subject of <a href="normal-forms.html">Normal forms</a> and <a href="equality.html">Equality</a>. <code>a.same(b)</code> only asks whether the trees are identical.</p>
+<section class="runbox" aria-label="Runnable code">
+  <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/symbolic</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math.</span></div>
+  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">// Newton's method on a tree: x → x − f(x)/f′(x), with every iterate exact.
+const f = sym("x^3 - 2x - 5");
+const step = sym("x - (F)/(D)").subs({ F: f, D: f.diff("x") });
+PRINT("one step:", step.simplify().toString());
+
+let x = new Rational(2);
+for (let i = 0; i &lt; 4; i++) {
+  // evaluate at an exact point returns an interval of width 0 for a rational function
+  x = step.evaluate({ x }).low;
+  PRINT(`x${i + 1} =`, x.toNumber(), `  (a fraction with ${x.denominator.toString().length} digits below)`);
+}
+PRINT("f(x4) is inside", f.evaluate({ x }, 40).toString());
+
+// the same tree goes to TeX
+f.diff("x").toTeX()</textarea>
+  <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
+  <div class="runbox-out" aria-live="polite"></div>
+</section>
+<footer class="sitelinks"><a href="https://github.com/ratmath/symbolic">GitHub</a> · <a href="https://ratmath.com/">ratmath.com</a> · <a href="https://ratmath.com/shelf/">shelf</a> · <a href="https://ratmath.com/core/">core</a></footer>
+</article>
+</main>
+</div>
+</body>
+</html>
