@@ -66,6 +66,27 @@
 <div class="tablewrap"><table class="ref">
 <tr><th>Export</th><th>What it does</th></tr>
 <tr><td><code>equal(a, b, options)</code></td><td>A <code>Verdict</code>: <code>verdict</code> is <code>"equal"</code>, <code>"different"</code> or <code>"undecided"</code>; <code>method</code>; <code>witness</code> for different; <code>agreedAt</code> for undecided; <code>value</code> is true, false or null.</td></tr>
+</table></div>
+<h2>Solving</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>solve(equation, name, options)</code></td><td>A <code>Solutions</code> object for <code>"lhs = rhs"</code> (or an expression, meaning <code>= 0</code>) in one variable over the reals. Options: <code>assume</code>, <code>range: [lo, hi]</code> (keep solutions in the range and list the members of periodic families), <code>interval: [a, b]</code> (search for certified sign changes when no method applies).</td></tr>
+<tr><td><code>Solutions</code></td><td><code>solutions</code>, <code>rejected</code> (<code>{ value, reason }</code> for candidates that failed the check), <code>complete</code>, <code>all</code>, <code>set</code> (a <code>RealSet</code> when the solutions fill intervals), <code>conditions</code>, <code>notes</code>, <code>steps</code>, <code>values</code>. Iterable.</td></tr>
+<tr><td><code>Solution</code></td><td><code>value</code>, <code>kind</code> (<code>"exact"</code>, <code>"algebraic"</code>, <code>"numeric"</code>), <code>verified</code> (<code>"proven"</code>, <code>"sign change"</code>, <code>"enclosed"</code>), <code>period</code> and <code>member(n)</code> for a family, <code>where</code>, <code>enclosure(bits)</code>, <code>approx()</code>.</td></tr>
+<tr><td><code>solveInequality(inequality, name, options)</code></td><td>The <code>RealSet</code> where <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code> or <code>!=</code> holds. Options: <code>assume</code>, <code>range</code> (needed for periodic inequalities).</td></tr>
+<tr><td><code>RealSet</code></td><td><code>pieces</code> (<code>{ lo, hi, loClosed, hiClosed }</code>, <code>null</code> for an unbounded end), <code>isEmpty</code>, <code>isAll</code>, <code>contains(q)</code>, <code>toRegionText()</code>.</td></tr>
+</table></div>
+<h2>Calculus</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>integrate(f, name, options)</code></td><td>An <code>Antiderivative</code>: <code>found</code>, <code>result</code>, <code>verified</code> (<code>"proven"</code> or <code>"checked"</code>), <code>checkedAt</code>, <code>steps</code>. With <code>{ from, to }</code> also <code>value</code> (exact, or <code>null</code> when F(b) − F(a) is not the integral), <code>enclosure</code> (certified quadrature, for rational ends), <code>agrees</code>, <code>note</code>. Option <code>assume</code>.</td></tr>
+<tr><td><code>limit(f, name, at, options)</code></td><td>A <code>Limit</code>: <code>kind</code> (<code>"finite"</code>, <code>"inf"</code>, <code>"-inf"</code>, <code>"none"</code>, <code>"numeric"</code>, <code>"unknown"</code>), <code>value</code>, <code>method</code>, <code>confirmed</code>, <code>enclosure</code>, <code>reason</code>. <code>at</code> is an expression, <code>"inf"</code> or <code>"-inf"</code>; option <code>side: "left" | "right"</code>.</td></tr>
+<tr><td><code>taylor(f, name, about, order)</code></td><td><code>{ polynomial, coefficients, lowest, order, about }</code>: exact coefficients of <code>(x − about)^(lowest + i)</code>; <code>lowest</code> is negative at a pole.</td></tr>
+<tr><td><code>Expr</code> methods</td><td><code>.solve(name, options)</code>, <code>.integrate(name, options)</code>, <code>.limit(name, at, options)</code>, <code>.taylor(name, about, order)</code>.</td></tr>
+</table></div>
+<h2>Errors and plan</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
 <tr><td><code>SymbolicError</code></td><td>Thrown with a <code>code</code>: <code>domain</code>, <code>division-by-zero</code>, <code>bad-rule</code>, <code>not-polynomial</code>, <code>not-univariate</code>, <code>too-large</code>.</td></tr>
 <tr><td><code>plan</code></td><td>The phases still to come.</td></tr>
 </table></div>
@@ -86,6 +107,11 @@ PRINT("proves    ", assume({ x: "&gt; 1" }).proves("log(x)/x &gt; 0"));
 PRINT("match     ", Object.entries(match("a_^n_", "(x + 1)^3")).map(([k, t]) =&gt; `${k} = ${format(t)}`).join(", "));
 PRINT("equal     ", equal("x^3 - x", "x*(x - 1)*(x + 1)").toString());
 PRINT("TeX       ", e.toTeX());
+PRINT("solve     ", solve("x^2 - x - 6 = 0").toString());
+PRINT("inequality", solveInequality("x^2 - x - 6 &lt; 0").toString());
+PRINT("integrate ", integrate("x*cos(x)").toString());
+PRINT("limit     ", limit("sin(3x)/x", "x", 0).toString());
+PRINT("taylor    ", taylor("cos(x)", "x", 0, 6).toString());
 Object.keys(rules)
 </template>
 </article>

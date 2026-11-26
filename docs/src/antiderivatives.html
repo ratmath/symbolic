@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Antiderivatives · RatMath Symbolic</title>
+<meta name="description" content="Antiderivatives in @ratmath/symbolic by the methods of a calculus course, each one differentiated and compared with the integrand before it is returned.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Antiderivatives</div>
+<h1>Antiderivatives that have been checked</h1>
+<p class="lede">Finding an antiderivative is a search; checking one is a calculation. <code>integrate</code> searches with the methods of a calculus course, then differentiates what it found and compares the result with the integrand. Nothing is returned that has not passed that comparison.</p>
+
+<h2>Using it</h2>
+<pre><code>import { integrate } from "@ratmath/symbolic";
+
+const r = integrate("x*exp(x)");
+String(r);        // x*exp(x) - exp(x) + C   (proven: its derivative is the integrand)
+r.result;         // the Expr x*exp(x) - exp(x)
+r.verified;       // "proven"
+r.steps;          // [ { rule: "by parts", detail: "u = x, dv = exp(x) dx: …" }, { rule: "table", … } ]
+
+String(integrate("1/(x^2 - 1)").result);       // log(abs(-1 + x))/2 - log(abs(1 + x))/2
+String(integrate("sin(x)^2").result);          // x/2 - sin(2*x)/4
+String(integrate("x/sqrt(x^2 + 1)").result);   // sqrt(x^2 + 1)
+String(integrate("1/(x^2 + 1)^2").result);     // x/(2*x^2 + 2) + atan(x)/2
+
+integrate("exp(x^2)").found;                   // false: nothing is guessed</code></pre>
+
+<h2>Proven and checked</h2>
+<p>If \(F\) is offered as an antiderivative of \(f\), then \(F' = f\) can be tested by <a href="equality.html"><code>equal</code></a>, which has three answers. They become:</p>
+<div class="tablewrap"><table class="ref">
+<tr><th><code>equal(F′, f)</code></th><th>What <code>integrate</code> does</th></tr>
+<tr><td>equal</td><td>Returns \(F\) with <code>verified: "proven"</code>. The normal form shows the derivative is the integrand.</td></tr>
+<tr><td>undecided</td><td>Returns \(F\) with <code>verified: "checked"</code> if the two agreed at every exact test point (certified evaluation), and says how many. This happens when the identity needed is beyond the normal form.</td></tr>
+<tr><td>different</td><td>Throws the candidate away and reports that nothing was found.</td></tr>
+</table></div>
+<p>The search can therefore be adventurous without being dangerous: a mistake in a method cannot reach you as an answer.</p>
+
+<h2>The methods</h2>
+<p><strong>Linearity and the table.</strong> Sums and constant multiples are taken apart, and single functions of a linear inside \(ax + b\) are looked up: powers, \(e^u\), \(\sin u\), \(\log u\), \(\arctan u\) and so on, each divided by \(a\).</p>
+<p><strong>Partial fractions.</strong> A rational function is split by <a href="https://ratmath.com/algebraic/">algebraic</a> into a polynomial plus terms \(\dfrac{A}{(x-r)^k}\) and \(\dfrac{Bx + C}{(x^2+px+q)^k}\). The first kind integrate to logarithms and powers. For the second, the numerator is split into a multiple of the derivative of the quadratic, which gives a logarithm or a power, and a constant, which gives an arctangent through the reduction formula</p>
+\[ \int \frac{dx}{q^k} = \frac{q'}{(k-1)\,D\,q^{k-1}} + \frac{2a(2k-3)}{(k-1)\,D}\int \frac{dx}{q^{k-1}}, \qquad q = ax^2+bx+c,\quad D = 4ac - b^2. \]
+<p><strong>Powers of sine and cosine.</strong> A product such as \(\sin^3 x\cos^2 x\) or \(\cos 3x \sin 2x\) is rewritten as a sum of sines and cosines of multiple angles, using \(\cos A\cos B = \tfrac12(\cos(A-B) + \cos(A+B))\) and its companions, and then integrated term by term.</p>
+<p><strong>Substitution.</strong> Each subexpression \(g(x)\) is tried as \(u\): if the integrand divided by \(g'(x)\) can be written with \(u\) alone, the problem becomes \(\int h(u)\,du\). For a square root of a linear expression the substitution is turned around, \(x = (u^2 - b)/a\), which removes the root.</p>
+<p><strong>Integration by parts.</strong> \(\int u\,dv = uv - \int v\,du\), with \(u\) chosen as a logarithm or inverse function first and a polynomial second. The product \(e^{ax}\sin bx\), where parts leads back to the start, is solved for directly.</p>
+<p><strong>Square roots of quadratics.</strong> \(\sqrt{ax^2+bx+c}\) and its reciprocal use the standard forms that a trigonometric substitution produces.</p>
+<pre><code>const r = integrate("x*sqrt(x + 1)");
+r.steps.map((s) =&gt; `${s.rule}: ${s.detail}`);
+// substitution: u = sqrt(x + 1), so x = u^2 - 1 and dx = 2*u du: the integrand becomes 2*u^4 - 2*u^2
+// power rule: u^4
+// power rule: u^2</code></pre>
+<p>These are methods, not a decision procedure. Some integrands have no elementary antiderivative at all (\(e^{x^2}\), \(\sin x / x\)), and some that do are out of reach here. In both cases <code>found</code> is false.</p>
+
+<h2>The absolute value in the logarithm</h2>
+<p>\(\int dx/x\) is \(\log|x|\), which is correct on each side of zero separately. The result shows <code>log(abs(x))</code> unless the <a href="assumptions.html">assumptions</a> prove the inside positive.</p>
+<pre><code>String(integrate("1/x").result);                                  // log(abs(x))
+String(integrate("1/x", "x", { assume: { x: "positive" } }).result);   // log(x)</code></pre>
+
+<h2>Definite integrals</h2>
+<p>With <code>from</code> and <code>to</code> the fundamental theorem gives \(F(b) - F(a)\), but only when the integrand is continuous between the ends. That condition is the one students forget, so it is checked: the integrand is integrated by certified quadrature from <a href="https://ratmath.com/analytic/">analytic</a>, and the exact value must lie in the certified interval.</p>
+<pre><code>const d = integrate("1/(x^2 + 1)", "x", { from: 0, to: 1 });
+String(d.value);      // pi/4
+d.enclosure;          // { low: 0.78539816339710…, high: 0.78539816339779… }   exact rationals
+d.agrees;             // true
+
+const bad = integrate("1/x^2", "x", { from: -1, to: 1 });
+bad.value;            // null
+bad.note;             // "the integrand could not be bounded on the interval (it may be undefined or unbounded inside), so F(b) − F(a) is not offered as the integral"</code></pre>
+<p>Without that check the formula gives \(\left[-1/x\right]_{-1}^{1} = -2\) for the integral of a positive function.</p>
+<template data-runbox>
+// What was found, how it was verified, and by which methods.
+const show = (f) =&gt; {
+  const r = integrate(f);
+  PRINT("∫ " + f + " dx");
+  PRINT("   " + (r.found ? `${r.result} + C   [${r.verified}]` : "nothing found by these methods"));
+  if (r.found) PRINT("   " + [...new Set(r.steps.map((s) =&gt; s.rule))].join(", "));
+};
+show("x^2*exp(-x)");
+show("1/(x^3 + 1)");
+show("log(x)^2");
+show("sin(x)^3*cos(x)^2");
+show("exp(2x)*cos(3x)");
+show("x*atan(x)");
+show("sqrt(1 - x^2)");
+show("exp(sqrt(x))");
+show("sin(x)/x");
+
+// the area of a quarter circle of radius 1, exactly and by certified quadrature
+const q = integrate("sqrt(1 - x^2)", "x", { from: 0, to: new Rational(1, 2) });
+PRINT("∫ from 0 to 1/2 of sqrt(1 - x^2) =", String(q.value));
+PRINT("certified enclosure:", q.enclosure.low.toNumber(), "to", q.enclosure.high.toNumber(), " agrees:", q.agrees);
+integrate("1/x^2", "x", { from: -1, to: 1 }).note
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

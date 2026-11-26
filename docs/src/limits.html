@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Limits · RatMath Symbolic</title>
+<meta name="description" content="Limits in closed form with @ratmath/symbolic: cancelling, leading terms, limits at infinity and one-sided limits, confirmed against certified enclosures.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Limits</div>
+<h1>Limits in closed form</h1>
+<p class="lede"><code>limit</code> gives the exact value of a limit where the standard methods find one, says when the two sides disagree, and compares its answer with the certified limit from analytic.</p>
+
+<h2>Using it</h2>
+<pre><code>import { limit } from "@ratmath/symbolic";
+
+const r = limit("(x^2 - 1)/(x - 1)", "x", 1);
+String(r);          // 2   (x -&gt; 1; cancel, then substitute; confirmed by certified evaluation)
+r.kind;             // "finite"
+String(r.value);    // "2"
+r.method;           // "cancel, then substitute"
+r.confirmed;        // true
+
+String(limit("sin(x)/x", "x", 0).value);                  // 1
+String(limit("(1 - cos(x))/x^2", "x", 0).value);          // 1/2
+String(limit("(2x^2 + 1)/(x^2 - 3)", "x", "inf").value);  // 2
+String(limit("sqrt(x^2 + x) - x", "x", "inf").value);     // 1/2
+String(limit("(1 + 1/x)^x", "x", "inf").value);           // e
+String(limit("sin(a*x)/x", "x", 0).value);                // a</code></pre>
+<p>The point is an expression, or <code>"inf"</code> or <code>"-inf"</code>. The option <code>{ side: "left" }</code> or <code>{ side: "right" }</code> asks for a one-sided limit.</p>
+
+<h2>The kinds of answer</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th><code>kind</code></th><th>Meaning</th></tr>
+<tr><td><code>"finite"</code></td><td>The limit is <code>value</code>, an exact expression.</td></tr>
+<tr><td><code>"inf"</code>, <code>"-inf"</code></td><td>The expression grows without bound, with that sign.</td></tr>
+<tr><td><code>"none"</code></td><td>The one-sided limits differ; <code>reason</code> gives both.</td></tr>
+<tr><td><code>"numeric"</code></td><td>No closed form was found, but analytic certified an enclosure of the limit (<code>enclosure</code>).</td></tr>
+<tr><td><code>"unknown"</code></td><td>Nothing was found. \(\sin x\) at infinity is an example: it has no limit, and the library does not claim to prove that.</td></tr>
+</table></div>
+<pre><code>String(limit("1/x", "x", 0));        // no limit: -inf from the left, inf from the right
+String(limit("1/x^2", "x", 0));      // inf
+String(limit("abs(x)/x", "x", 0));   // no limit: -1 from the left, 1 from the right
+String(limit("abs(x)/x", "x", 0, { side: "left" }).value);   // -1</code></pre>
+
+<h2>How a limit is found</h2>
+<p><strong>Cancel, then substitute.</strong> The expression is put in <a href="normal-forms.html">normal form</a>, which cancels common factors: \((x^2-1)/(x-1)\) becomes \(x + 1\). If the result is defined near the point on the side in question, its value there is the limit, by continuity.</p>
+<p><strong>Leading terms.</strong> When numerator and denominator both vanish (or the denominator alone does), each is expanded about the point:</p>
+\[ \frac{N(x)}{D(x)} = \frac{n_p (x-a)^p + \cdots}{d_q (x-a)^q + \cdots}. \]
+<p>If \(p > q\) the limit is 0; if \(p = q\) it is \(n_p/d_q\); if \(p < q\) the quotient is unbounded, with a sign fixed by the signs of \(n_p\), \(d_q\), the side, and whether \(q - p\) is even. This is l'Hôpital's rule applied as many times as needed, done in one step: differentiating \(p\) times is exactly reading off the first nonzero coefficient. The coefficients come from <a href="expansions.html"><code>taylor</code></a> and are exact.</p>
+<p><strong>At infinity.</strong> Put \(x = 1/t\) and let \(t \to 0\) from the right. Square roots are tidied using \(t > 0\), so \(\sqrt{x^2 + x} - x\) becomes \((\sqrt{1 + t} - 1)/t\), whose leading terms give \(1/2\).</p>
+<p><strong>Powers with the variable in the exponent.</strong> For \(f^g\) the limit of \(g\log f\) is found first, and the answer is its exponential. That is how \((1 + 1/x)^x \to e\).</p>
+
+<h2>The cross-check</h2>
+<p>When the expression has no other letters, <a href="https://ratmath.com/analytic/">analytic</a> can often certify an interval that contains the limit, by a different argument from the one used here. If the closed form lies in that interval, <code>confirmed</code> is true. If it lies outside, the closed form is dropped and the certified interval is returned instead, as a <code>"numeric"</code> answer.</p>
+<template data-runbox>
+// A page of limits from a first course.
+const show = (f, at, options) =&gt; PRINT(`lim ${f}  as x -&gt; ${at}${options ? " from the " + options.side : ""}\n    ${limit(f, "x", at, options)}`);
+show("(x^3 - 8)/(x - 2)", 2);
+show("(sqrt(x + 1) - 1)/x", 0);
+show("(exp(x) - 1 - x)/x^2", 0);
+show("tan(x)/x", 0);
+show("x*log(x)", 0, { side: "right" });
+show("x^x", 0, { side: "right" });
+show("(3x^3 - x)/(2x^3 + 5)", "inf");
+show("(1 + 2/x)^(3x)", "inf");
+show("atan(x)", "-inf");
+show("exp(1/x)", 0, { side: "left" });
+show("exp(1/x)", 0, { side: "right" });
+show("1/(x - 1)", 1);
+show("sin(x)", "inf");
+
+// the derivative of sin at 0, from the definition
+String(limit("(sin(0 + h) - sin(0))/h", "h", 0).value)
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

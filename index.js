@@ -2,6 +2,8 @@
 //
 // Phase 1: expressions, assumptions, rewriting with rules that know their
 // domains, a normal form, and equality with three answers.
+// Phase 2: solving equations and inequalities in one variable.
+// Phase 3: antiderivatives checked by differentiating, limits, expansions.
 
 import { Expr, tree } from "./src/expr.js";
 import { assume } from "./src/assume.js";
@@ -13,6 +15,10 @@ export { Expr, sym, tree, substitute, toTeX, evaluate, SymbolicError, num, v, op
 export { Assumptions, assume, parseCondition } from "./src/assume.js";
 export { normal, expand, factor, collect, apart, together, cancel, isZero, rewrite, match, rule, Rule, rules, spotCheck, equal, simplify, Verdict };
 export { parse, format, differentiate } from "@ratmath/analytic";
+import { solve, solveInequality } from "./src/solve.js";
+import { integrate, taylor, limit } from "./src/calculus.js";
+export { solve, solveInequality, Solutions, Solution, RealSet } from "./src/solve.js";
+export { integrate, Antiderivative, taylor, limit, Limit } from "./src/calculus.js";
 export { plan } from "./src/plan.js";
 
 // the operations as methods, so they chain: sym("(x+1)^2").expand().diff("x")
@@ -26,4 +32,8 @@ Object.assign(Expr.prototype, {
   rewrite(ruleSet, options) { return rewrite(this, ruleSet, options); },
   equals(other, options) { return equal(this, other, options); },
   sign(assumptions) { return assume(assumptions).sign(tree(this)); },
+  solve(name, options) { return solve(this, name, options); },
+  integrate(name, options) { return integrate(this, name, options); },
+  limit(name, at, options) { return limit(this, name, at, options); },
+  taylor(name, about, order, options) { return taylor(this, name, about, order, options); },
 });

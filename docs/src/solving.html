@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Solving equations · RatMath Symbolic</title>
+<meta name="description" content="Solving equations in one variable with @ratmath/symbolic: every candidate is checked in the original equation, and the ones that fail are reported.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Solving</div>
+<h1>Solving equations, and checking the answers</h1>
+<p class="lede">The methods are the ones taught: factor, undo a function, square both sides, substitute. What differs is the last step. Every candidate is put back into the equation as it was written, and the answer says which candidates passed, which failed and why, and whether the list is known to be complete.</p>
+
+<h2>One call</h2>
+<pre><code>import { solve } from "@ratmath/symbolic";
+
+const s = solve("sqrt(x + 3) = x - 3");
+String(s);        // x = 6
+                  //   rejected x = 1: the two sides differ there by about 4
+s.solutions;      // [ Solution ]   each with value, kind, verified
+s.rejected;       // [ { value: 1, reason: "the two sides differ there by about 4" } ]
+s.complete;       // true: there are no other real solutions
+s.steps;          // [ { rule: "radicals eliminated", detail: "… leads to x^2 - 7*x + 6 = 0, whose roots are candidates only" } ]</code></pre>
+<p>An equation is text with one <code>=</code>; an expression alone means "equals zero". The variable defaults to <code>x</code>, and any other letters are treated as parameters.</p>
+
+<h2>Why candidates must be checked</h2>
+<p>Many steps of algebra are not reversible. Squaring both sides of \(\sqrt{x+3} = x - 3\) gives \(x + 3 = (x-3)^2\), that is \(x^2 - 7x + 6 = 0\), with roots 1 and 6. But squaring also keeps the solutions of \(\sqrt{x+3} = -(x-3)\), and \(x = 1\) is one of those. In the same way, multiplying by a denominator can add a root where the denominator is zero, and combining logarithms can add one where an argument is negative.</p>
+<p>So the roots of the simplified equation are only <em>candidates</em>. Each is substituted into the original equation. It is accepted as <code>"proven"</code> when the difference of the two sides reduces to zero in the <a href="normal-forms.html">normal form</a>, and rejected when a certified evaluation shows the two sides apart or one side undefined. A candidate that can be neither proven nor refuted is kept and marked <code>"enclosed"</code>: the two sides agree to the precision tried, which is not a proof and is not presented as one.</p>
+
+<h2>What it solves</h2>
+<pre><code>String(solve("x^2 - 2x - 1 = 0"));            // x = 1 - sqrt(2),  sqrt(2) + 1
+String(solve("abs(2x - 1) = 5"));             // x = -2,  3
+String(solve("exp(2x) - 3exp(x) + 2 = 0"));   // x = 0,  log(2)
+String(solve("log(x) + log(x - 1) = log(6)"));
+// x = 3
+//   rejected x = -2: a side of the equation is undefined there
+String(solve("x^2 + 1 = 0"));                 // no real solution
+String(solve("(x + 1)^2 = x^2 + 2x + 1"));    // every x where the equation is defined
+String(solve("abs(x) = x"));                  // x in [0, inf)</code></pre>
+<p>The solver works over the real numbers. It brings everything to one side, takes the normal form, factors the numerator and solves each factor: linear and quadratic factors by formula, a function of the unknown by undoing it (exponentials, logarithms, roots, powers, absolute values, the trigonometric functions), a polynomial in one such function by substitution. Radicals and absolute values that cannot be undone directly are eliminated with resultants, which is the systematic form of "isolate the root and square".</p>
+
+<h2>Roots with no formula</h2>
+<p>A polynomial of degree five or more usually has no solution in radicals, and a cubic's formula is rarely what anyone wants. Such roots are returned as named algebraic numbers: exact objects, each known by its polynomial and an isolating interval that can be narrowed as far as you like.</p>
+<pre><code>const c = solve("x^3 - x - 1 = 0");
+String(c);                 // x = alpha1
+                           //   alpha1 ≈ 1.3247179572…: a root of x^3 - x - 1 = 0
+c.solutions[0].kind;       // "algebraic"
+c.solutions[0].verified;   // "proven"
+c.solutions[0].enclosure(60);   // a RationalInterval of width below 2^-60
+c.complete;                // true: Sturm's theorem counts the real roots, so none is missing</code></pre>
+<p>Where no method applies at all, as for \(\cos x = x\), <code>solve</code> says so. Give it an interval and it searches for certified sign changes using <a href="https://ratmath.com/analytic/">analytic</a>; those solutions have kind <code>"numeric"</code> and <code>complete</code> is false, because a root where the function touches zero without crossing would be missed.</p>
+<pre><code>String(solve("cos(x) = x"));
+// no solution found (the search was not complete)
+String(solve("cos(x) = x", "x", { interval: [0, 2] }));
+// one solution near 0.7390851332, verified by a sign change</code></pre>
+
+<h2>Families of solutions</h2>
+<p>A trigonometric equation has infinitely many solutions, in families one period apart. The answer gives each family with the whole number \(n\); <code>member(n)</code> picks one out, and a <code>range</code> lists the members that fall inside it.</p>
+<pre><code>const t = solve("2sin(x) = 1");
+String(t);                      // x = pi/6 + 2*n*pi,  5*pi/6 + 2*n*pi   (n any whole number)
+String(t.solutions[0].member(1));   // 13*pi/6
+String(t.solutions[0].period);      // 2*pi
+
+String(solve("sin(2x) = sin(x)", "x", { range: [0, "2*pi"] }));
+// x = 0,  pi/3,  pi,  5*pi/3,  2*pi</code></pre>
+
+<h2>Parameters</h2>
+<p>With other letters in the equation, the solution is a formula together with the conditions under which it holds.</p>
+<pre><code>String(solve("a*x + b = c", "x"));
+// x = (c - b)/a
+//   provided a != 0
+String(solve("a*x^2 + b*x + c = 0", "x"));
+// x = (-sqrt(b^2 - 4*a*c) - b)/(2*a),  (sqrt(b^2 - 4*a*c) - b)/(2*a)
+//   provided a != 0 and b^2 - 4*a*c &gt;= 0</code></pre>
+<p>Inequalities have <a href="inequalities.html">their own page</a>.</p>
+<template data-runbox>
+// Each equation, what was found, what was thrown out, and whether the list is complete.
+const show = (eq, options) =&gt; {
+  const s = solve(eq, "x", options);
+  PRINT(eq);
+  PRINT("   " + String(s).split("\n").join("\n   "));
+  PRINT("   complete:", s.complete, "  verified:", s.solutions.map((q) =&gt; q.verified).join(", ") || "-");
+};
+show("sqrt(2x + 3) = x");              // squaring adds x = -1
+show("sqrt(x) + sqrt(x - 5) = 5");     // two roots to remove
+show("abs(x - 1) = 2x + 4");           // one of the two cases fails
+show("log(x) + log(x - 1) = log(6)");
+show("4^x - 5*2^x + 4 = 0");           // a quadratic in 2^x
+show("2cos(x)^2 - cos(x) - 1 = 0", { range: [0, "2*pi"] });
+show("x^5 - x + 1 = 0");               // no formula: a named algebraic number
+
+// the root of the quintic to 30 digits, certified
+const alpha = solve("x^5 - x + 1 = 0").solutions[0];
+const iv = alpha.enclosure(110);
+PRINT("alpha1 lies in an interval of width", iv.high.subtract(iv.low).toNumber());
+iv.low.toDecimal ? iv.low.toDecimal(30) : iv.low.toNumber()
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

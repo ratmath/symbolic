@@ -12,8 +12,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=c3d6ae1986">
-<script type="module" src="assets/site.js?v=c3d6ae1986"></script>
+<link rel="stylesheet" href="assets/style.css?v=595953f997">
+<script type="module" src="assets/site.js?v=595953f997"></script>
 </head>
 <body>
 <div class="shell">
@@ -22,7 +22,7 @@
 <article>
 <div class="eyebrow">Explore</div>
 <h1>Explore</h1>
-<p class="lede">Type an expression, state what you assume about its letters, and see each form of it. Then put a second expression beside it and ask whether the two are equal.</p>
+<p class="lede">Type an expression, state what you assume about its letters, and see each form of it. Then put a second expression beside it and ask whether the two are equal, solve an equation or an inequality, and do the calculus.</p>
 
 <div class="demo">
 <div class="demo-row"><label for="ex-a">Expression</label><input id="ex-a" class="text grow" value="sqrt(x^2 + 2x + 1) + (x^2 - 1)/(x - 1)" spellcheck="false" autocapitalize="off"></div>
@@ -44,6 +44,22 @@
 <div class="out" id="ex-rw"></div>
 </div>
 
+<h2>Solve</h2>
+<div class="demo">
+<div class="demo-row"><label for="ex-eqn">Equation or inequality</label><input id="ex-eqn" class="text grow" value="sqrt(x + 3) = x - 3" spellcheck="false" autocapitalize="off"></div>
+<div class="demo-row"><label for="ex-range">x between</label><input id="ex-lo" class="text" size="8" value="" placeholder="0" spellcheck="false" autocapitalize="off" aria-label="lower end"><span>and</span><input id="ex-hi" class="text" size="8" value="" placeholder="2*pi" spellcheck="false" autocapitalize="off" aria-label="upper end"><span class="muted">(optional; needed to list periodic solutions)</span></div>
+<div class="demo-row" id="ex-chips2"></div>
+<div class="out" id="ex-solve"></div>
+</div>
+
+<h2>Calculus</h2>
+<div class="demo">
+<div class="demo-row"><label for="ex-f">f(x)</label><input id="ex-f" class="text grow" value="x*exp(x)" spellcheck="false" autocapitalize="off"></div>
+<div class="demo-row"><label for="ex-at">Limit and expansion at x =</label><input id="ex-at" class="text" size="8" value="0" spellcheck="false" autocapitalize="off"><label for="ex-order">order</label><input id="ex-order" class="text" type="number" min="0" max="12" value="5" style="width: 5em"></div>
+<div class="demo-row" id="ex-chips3"></div>
+<div id="ex-calc"></div>
+</div>
+
 <p>Assumptions are written as <code>name: fact</code>, separated by semicolons. A fact is a word (<code>positive</code>, <code>negative</code>, <code>nonnegative</code>, <code>nonzero</code>, <code>integer</code>), a comparison (<code>&gt; 2</code>) or an interval (<code>in (0, 1]</code>). See <a href="assumptions.html">Assumptions</a>.</p>
 <section class="runbox" aria-label="Runnable code">
   <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/symbolic</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math.</span></div>
@@ -55,6 +71,9 @@ PRINT("factor:  ", e.factor({ assume: A }).toString());
 PRINT("simplify:", e.simplify({ assume: A }).toString());
 PRINT("equal to 2x + 2?", e.equals("2x + 2", { assume: A }).toString());
 PRINT("without the assumption:", e.equals("2x + 2").toString());
+PRINT("solve:   ", solve("sqrt(x + 3) = x - 3").toString());
+PRINT("integral:", integrate("x*exp(x)").toString());
+PRINT("limit:   ", limit("x*exp(x)", "x", "-inf").toString());
 rewrite("sin(x + y)*cos(x - y)", rules.trig.expand).expr.expand().toString()</textarea>
   <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
   <div class="runbox-out" aria-live="polite"></div>
@@ -64,7 +83,7 @@ rewrite("sin(x + y)*cos(x - y)", rules.trig.expand).expr.expand().toString()</te
 </main>
 </div>
 <script type="module">
-import { A as S, h } from "./assets/site.js?v=c3d6ae1986";
+import { A as S, h } from "./assets/site.js?v=595953f997";
 const $ = (id) => document.getElementById(id);
 const EXAMPLES = [
   ["sqrt(x^2 + 2x + 1) + (x^2 - 1)/(x - 1)", "", "2x + 2"],
@@ -144,6 +163,83 @@ $("ex-chips").append(...EXAMPLES.map(([a, as, b]) => h("button", { class: "chipb
 } }, as ? `${a}  (${as})` : a)));
 for (const id of ["ex-a", "ex-as", "ex-b", "ex-rules", "ex-cond"]) $(id).addEventListener("input", update);
 update();
+
+// ---- solve ----
+const SOLVE = [
+  ["sqrt(x + 3) = x - 3", "", ""],
+  ["x^3 - x - 1 = 0", "", ""],
+  ["2sin(x) = 1", "", ""],
+  ["sin(2x) = sin(x)", "0", "2*pi"],
+  ["log(x) + log(x - 1) = log(6)", "", ""],
+  ["a*x^2 + b*x + c = 0", "", ""],
+  ["(x - 1)/(x + 2) <= 0", "", ""],
+  ["abs(2x + 1) >= 3", "", ""],
+  ["sin(x) > 1/2", "0", "2*pi"],
+];
+function updateSolve() {
+  const text = $("ex-eqn").value;
+  const out = $("ex-solve");
+  try {
+    const lo = $("ex-lo").value.trim();
+    const hi = $("ex-hi").value.trim();
+    const options = lo || hi ? { range: [lo || null, hi || null] } : {};
+    if (/<=|>=|!=|<|>/.test(text)) {
+      const s = S.solveInequality(text, "x", options);
+      out.replaceChildren(h("dl", { class: "kv" }, line("holds for x in", () => String(s)), line("pieces", () => String(s.pieces.length))));
+      return;
+    }
+    const s = S.solve(text, "x", options);
+    out.replaceChildren(h("dl", { class: "kv" },
+      line("solutions", () => String(s).split("\n")[0]),
+      ...s.solutions.slice(0, 8).map((q) => line(String(q.value), () => `${q.kind}, ${q.verified}${q.kind === "exact" && !q.period ? "" : q.period ? `, period ${q.period}` : `, about ${q.approx()}`}`)),
+      ...s.rejected.map((r) => line("rejected", () => `x = ${r.value}: ${r.reason}`)),
+      ...(s.conditions.length ? [line("provided", () => s.conditions.join(" and "))] : []),
+      line("complete", () => (s.complete ? "yes: there are no other real solutions" : "not proven")),
+      ...s.steps.map((st) => line(st.rule, () => st.detail)),
+      ...s.notes.map((n) => line("note", () => n)),
+    ));
+  } catch (e) {
+    out.replaceChildren(h("div", { class: "err" }, e.message));
+  }
+}
+$("ex-chips2").append(...SOLVE.map(([e, lo, hi]) => h("button", { class: "chipbtn", onclick: () => {
+  $("ex-eqn").value = e;
+  $("ex-lo").value = lo;
+  $("ex-hi").value = hi;
+  updateSolve();
+} }, lo ? `${e}  on [${lo}, ${hi}]` : e)));
+for (const id of ["ex-eqn", "ex-lo", "ex-hi"]) $(id).addEventListener("input", updateSolve);
+updateSolve();
+
+// ---- calculus ----
+const CALC = [["x*exp(x)", "0"], ["1/(x^2 - 1)", "1"], ["sin(x)/x", "0"], ["sin(x)^2*cos(x)^2", "0"], ["x*sqrt(x + 1)", "0"], ["(1 + 1/x)^x", "inf"], ["1/(x^2 + 1)^2", "inf"], ["exp(x^2)", "0"]];
+function updateCalc() {
+  const f = $("ex-f").value;
+  const at = $("ex-at").value.trim() || "0";
+  const order = Math.max(0, Math.min(12, Number($("ex-order").value) || 0));
+  let integral = null;
+  const rows = [
+    line("d/dx", () => String(S.sym(f).diff("x").expand())),
+    line("antiderivative", () => {
+      integral = S.integrate(f, "x");
+      return integral.found ? `${integral.result} + C` : "nothing found by the methods of the course";
+    }),
+  ];
+  if (integral?.found) {
+    rows.push(line("verified", () => (integral.verified === "proven" ? "proven: its derivative is the integrand" : `checked: its derivative agrees with the integrand at ${integral.checkedAt} test points`)));
+    rows.push(...integral.steps.slice(0, 8).map((st) => line(st.rule, () => st.detail)));
+  }
+  rows.push(line(`limit at ${at}`, () => String(S.limit(f, "x", at))));
+  if (!/inf/.test(at)) rows.push(line(`expansion at ${at}`, () => String(S.taylor(f, "x", at, order))));
+  $("ex-calc").replaceChildren(h("dl", { class: "kv out" }, rows));
+}
+$("ex-chips3").append(...CALC.map(([f, at]) => h("button", { class: "chipbtn", onclick: () => {
+  $("ex-f").value = f;
+  $("ex-at").value = at;
+  updateCalc();
+} }, f)));
+for (const id of ["ex-f", "ex-at", "ex-order"]) $(id).addEventListener("input", updateCalc);
+updateCalc();
 </script>
 </body>
 </html>
