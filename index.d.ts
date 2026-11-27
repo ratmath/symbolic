@@ -245,6 +245,8 @@ export class Solutions implements Iterable<Solution> {
   readonly notes: readonly string[];
   readonly steps: ReadonlyArray<{ rule: string; detail: string }>;
   readonly values: readonly Expr[];
+  /** The solutions in [lo, hi] (or an interval written "[0, 2*pi)"), families listed member by member, in order. */
+  within(lo: ExprLike | number, hi?: ExprLike | number): Expr[];
   [Symbol.iterator](): Iterator<Solution>;
   toString(): string;
 }
@@ -256,6 +258,9 @@ export class RealSet {
   readonly isEmpty: boolean;
   readonly isAll: boolean;
   contains(q: number | Rational): boolean | null;
+  intersect(other: RealSet): RealSet;
+  union(other: RealSet): RealSet;
+  complement(): RealSet;
   /** The set in Core's region notation where the ends are rational. */
   toRegionText(): string;
   toString(): string;
@@ -430,3 +435,19 @@ export interface PlannedPhase {
 }
 /** The phases still to come: empty, since all five are built. */
 export const plan: readonly PlannedPhase[];
+
+// ---- school algebra ----
+
+export function completeSquare(expr: ExprLike, x?: string): { form: Expr; a: Expr; h: Expr; k: Expr; vertex: [Expr, Expr]; verified: "proven" };
+export function compose(f: ExprLike, g: ExprLike, x?: string): { value: Expr; unsimplified: Expr; domain: RealSet | null; note: string | null };
+export function sinusoid(expr: ExprLike, x?: string): {
+  fn: "sin" | "cos"; amplitude: Expr; A: Expr; B: Expr; C: Expr; D: Expr;
+  period: Expr; frequency: Expr; phaseShift: Expr; midline: Expr; form: Expr; verified: "proven" | "checked";
+};
+export function implicitDiff(F: ExprLike, x?: string, y?: string, options?: { order?: 1 | 2 }): {
+  first: Expr; second: Expr | null; steps: ReadonlyArray<{ rule: string; detail: string }>;
+  at(point: Record<string, ExprLike | number>): { first: Expr; second: Expr | null };
+};
+export function leibniz(f: ExprLike, t?: string, lower?: ExprLike | number, upper?: ExprLike | number, x?: string): {
+  value: Expr | null; boundary: Expr; integral: Expr | null; steps: ReadonlyArray<{ rule: string; detail: string }>;
+};

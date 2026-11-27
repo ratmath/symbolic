@@ -756,6 +756,68 @@ export class Solutions {
   get values() {
     return this.solutions.map((s) => s.value);
   }
+  /**
+   * The solutions in an interval, families included, as Exprs in increasing
+   * order: within("0", "2*pi") is the closed interval; give the ends as text
+   * "[0, 2*pi)" to choose open and closed ends. Each member is placed by an
+   * exact comparison with the ends (an end that a member equals is proven
+   * equal by the normal form), and a member listed by two families is listed
+   * once.
+   */
+  within(lo, hi) {
+    let loClosed = true;
+    let hiClosed = true;
+    if (hi === undefined && typeof lo === "string") {
+      const m = /^\s*([[(])(.*),(.*)([\])])\s*$/.exec(lo);
+      if (!m) refuse("syntax", `"${lo}" is not an interval such as "[0, 2*pi)"`);
+      [loClosed, lo, hi, hiClosed] = [m[1] === "[", m[2], m[3], m[4] === "]"];
+    }
+    const A = assume({});
+    const L = new Val(tree(lo));
+    const H = new Val(tree(hi));
+    const inside = (val) => {
+      const a = compareVals(val, L, A);
+      const b = compareVals(H, val, A);
+      if (a === null || b === null) refuse("too-close", `could not decide whether ${format(val.tree)} is in the interval`);
+      return (a > 0 || (a === 0 && loClosed)) && (b > 0 || (b === 0 && hiClosed));
+    };
+    const found = [];
+    for (const s of this.solutions) {
+      if (!s.period) {
+        if (inside(s.val)) found.push(s.val);
+        continue;
+      }
+      // n with lo ≤ val + n·p ≤ hi, found from enclosures and then checked exactly
+      const p = s.period.tree;
+      const P = new Val(p);
+      const sp = signOf(P, A);
+      if (sp !== 1 && sp !== -1) refuse("unsupported", "the period of a family must be a nonzero number");
+      const e = (t) => Val.merge(t, s.val).enclosure(64);
+      const [a, b] = [e(op("/", op("-", L.tree, s.val.tree), p)), e(op("/", op("-", H.tree, s.val.tree), p))];
+      const ends = [a.low, a.high, b.low, b.high];
+      const first = ends.reduce((m, q) => (q.compareTo(m) < 0 ? q : m)).floor() - 1n;
+      const last = ends.reduce((m, q) => (q.compareTo(m) > 0 ? q : m)).floor() + 1n;
+      if (last - first > 10000n) refuse("too-many", "the interval holds more than 10000 members of a family");
+      for (let n = first; n <= last; n++) {
+        const val = Val.merge(op("+", s.val.tree, op("*", num(new Rational(n)), p)), s.val);
+        if (inside(val)) found.push(val.map((t) => soft(() => expand(t, { assume: A }).tree, t)));
+      }
+    }
+    const sorted = [];
+    for (const val of found) {
+      let placed = false;
+      for (let i = 0; i < sorted.length && !placed; i++) {
+        const c = compareVals(val, sorted[i], A);
+        if (c === 0) placed = true;
+        else if (c !== null && c < 0) {
+          sorted.splice(i, 0, val);
+          placed = true;
+        }
+      }
+      if (!placed) sorted.push(val);
+    }
+    return sorted.map((val) => new Expr(val.tree));
+  }
   toString() {
     const x = this.variable;
     if (this.all) return `every ${x} where the equation is defined`;
@@ -1234,6 +1296,18 @@ export class RealSet {
     }
     return unsure ? null : false;
   }
+  /** The numbers in both sets. */
+  intersect(other) {
+    return combine(this, other, (a, b) => a && b, "intersect");
+  }
+  /** The numbers in either set. */
+  union(other) {
+    return combine(this, other, (a, b) => a || b, "union");
+  }
+  /** The real numbers not in this set. */
+  complement() {
+    return combine(this, new RealSet(this.variable, []), (a) => !a, "complement");
+  }
   /** Certified enclosures of the ends: [{ lo, hi }] with RationalIntervals or null. */
   enclosures(bits = 64) {
     return this._pieces.map((p) => ({ lo: p.lo && p.lo.enclosure(bits), hi: p.hi && p.hi.enclosure(bits) }));
@@ -1261,6 +1335,60 @@ export class RealSet {
   [Symbol.for("nodejs.util.inspect.custom")]() {
     return this.toString();
   }
+}
+
+/**
+ * Combine two sets with a boolean rule: every end of either set is placed in
+ * order (compared exactly, as in solveInequality), and each end and each gap
+ * between neighbouring ends is in the result when the rule says so for the
+ * two sets there. A gap lies inside a piece or outside it as a whole, since
+ * no end of either set falls inside it.
+ */
+function combine(S, T, rule, what) {
+  if (T.variable !== S.variable && T._pieces.length && S._pieces.length) refuse("bad-argument", `cannot ${what} a set in ${S.variable} with a set in ${T.variable}`);
+  const A = assume({});
+  const sorted = [];
+  for (const p of [...S._pieces, ...T._pieces]) {
+    for (const e of [p.lo, p.hi]) {
+      if (e === null) continue;
+      let placed = false;
+      for (let i = 0; i < sorted.length && !placed; i++) {
+        const c = compareVals(e, sorted[i], A);
+        if (c === null) refuse("too-close", `could not tell ${format(e.tree)} and ${format(sorted[i].tree)} apart or prove them equal`);
+        if (c === 0) placed = true;
+        else if (c < 0) {
+          sorted.splice(i, 0, e);
+          placed = true;
+        }
+      }
+      if (!placed) sorted.push(e);
+    }
+  }
+  const cmp = (a, b) => (a === b ? 0 : compareVals(a, b, A));
+  // is the point `x` (a sorted end) in the set?
+  const atPoint = (set, x) =>
+    set._pieces.some((p) => {
+      const a = p.lo === null ? 1 : cmp(x, p.lo);
+      const b = p.hi === null ? 1 : cmp(p.hi, x);
+      return (a > 0 || (a === 0 && p.loClosed)) && (b > 0 || (b === 0 && p.hiClosed));
+    });
+  // is the open gap (a, b) between neighbouring ends (null for ±inf) in the set?
+  const inGap = (set, a, b) =>
+    set._pieces.some((p) => {
+      if (p.lo !== null && p.hi !== null && cmp(p.lo, p.hi) === 0) return false;
+      const left = p.lo === null || (a !== null && cmp(p.lo, a) <= 0);
+      const right = p.hi === null || (b !== null && cmp(b, p.hi) <= 0);
+      return left && right;
+    });
+  const pieces = [];
+  const ends = [null, ...sorted, null];
+  for (let i = 0; i + 1 < ends.length; i++) {
+    const [a, b] = [ends[i], ends[i + 1]];
+    if (a !== null && rule(atPoint(S, a), atPoint(T, a))) pieces.push(new Piece(a, a, true, true));
+    if (rule(inGap(S, a, b), inGap(T, a, b))) pieces.push(new Piece(a, b, false, false));
+  }
+  const where = [...(S.where ?? []), ...(T.where ?? [])].filter((w, i, all) => all.findIndex((u) => u.name === w.name) === i);
+  return new RealSet(S.variable, joinPieces(pieces), { where });
 }
 
 /** The points where an expression can stop being defined or continuous: equations to solve. */
@@ -1302,6 +1430,15 @@ export function solveInequality(inequality, name, options = {}) {
   let rhs;
   let rel;
   if (typeof inequality === "string") {
+    // a chain a < b <= c is the intersection of a < b and b <= c
+    const chain = /^([^=<>!]+)(<=|>=|<|>)([^=<>!]+)(<=|>=|<|>)([^=<>!]+)$/.exec(inequality);
+    if (chain) {
+      const [, a, r1, b, r2, c] = chain;
+      const first = solveInequality(`${a}${r1}${b}`, name, options);
+      const second = solveInequality(`${b}${r2}${c}`, name ?? first.variable, options);
+      const both = first.intersect(second);
+      return new RealSet(both.variable, both._pieces, { inequality: `${format(tree(a))} ${r1} ${format(tree(b))} ${r2} ${format(tree(c))}`, where: both.where });
+    }
     const m = /^([^=<>!]+)(<=|>=|<|>|!=)([^=<>!]+)$/.exec(inequality);
     if (!m) refuse("syntax", `"${inequality}" is not an inequality: expected one of <, <=, >, >=, !=`);
     [lhs, rel, rhs] = [tree(m[1]), m[2], tree(m[3])];

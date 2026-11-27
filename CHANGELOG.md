@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- School helpers from the Course Test roadmap (batch A9), each checked:
+  - `completeSquare(expr, x)`: a(x − h)² + k and the vertex.
+  - `compose(f, g)`: f(g(x)) with its domain and a note when g leaves f's domain.
+  - `sinusoid(expr)`: amplitude, period, phase shift and midline of
+    A·sin(Bx + C) + D, also from a·sin + b·cos.
+  - `implicitDiff(F, x, y, { order })` and `leibniz(f, t, a, b)`.
+  - `asin`, `acos` and `atan` at the standard exact values simplify to
+    multiples of pi.
+  - `RealSet#intersect`, `union`, `complement`; `solveInequality` reads a
+    chain such as `-3 < 2x + 1 <= 7`.
+  - `solutions.within(lo, hi)` lists the members of every family in an
+    interval.
+  - `sum` takes a factor without the index outside first, so
+    `sum("4/(n^2*pi^2)", "n", 1, "inf")` is 2/3.
+  - New docs page "School algebra".
 - The `@ratmath/structures` range is now `^0.5.0` (was `^0.1.0`, which under 0.x
   rejects structures 0.5.0, so the package could not be installed from npm).
 - Improper integrals: `integrate(f, x, { from, to })` takes `"inf"` and

@@ -301,6 +301,21 @@ export function sum(f, index = "k", from = 0, to = "n", options = {}) {
   const infinite = to === "inf" || to === Infinity || to === "∞";
   const b = infinite ? null : tree(to);
   if (has(a, k) || (b && has(b, k))) refuse("bad-argument", `the ends of the sum cannot contain ${k}`);
+  // a factor without the index (pi, a parameter) comes outside the sum: Σ c·f(k) = c·Σ f(k)
+  if (!options.noFactor) {
+    const fs = factorsOf(t);
+    const outside = fs.filter((f) => !has(f.t, k));
+    if (outside.length && outside.length < fs.length && outside.some((f) => f.t.type !== "num")) {
+      const join = (list) => list.reduce((acc, f) => (acc === null ? (f.inverse ? op("/", num(1), f.t) : f.t) : op(f.inverse ? "/" : "*", acc, f.t)), null);
+      const c = join(outside);
+      const inner = sum(join(fs.filter((f) => has(f.t, k))), k, from, to, { ...options, noFactor: true });
+      if (inner.value instanceof Expr && !inner.diverges) {
+        const value = nicer(op("*", c, inner.value.tree), A);
+        const steps = [{ rule: "constant factor", detail: `${format(c)} does not depend on ${k}, so it comes outside the sum` }, ...inner.steps];
+        return new Sum({ ...inner, term: new Expr(t), value: new Expr(value), antidifference: inner.antidifference && new Expr(nicer(op("*", c, inner.antidifference.tree), A)), method: `constant factor, then ${inner.method}`, steps });
+      }
+    }
+  }
   const S = new SumFinder(k, A);
   const base = { term: new Expr(t), index: k, from: new Expr(a), to: infinite ? "inf" : new Expr(b) };
   const F = S.antidifference(t);

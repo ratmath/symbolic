@@ -219,7 +219,8 @@ describe("equality with three answers", () => {
     expect(v("(a^b)^c", "a^(b*c)", { assume: { a: "positive" } })).toBe("equal");
   });
   test("undecided is said plainly", () => {
-    const r = S.equal("atan(1)", "pi/4");
+    // true (Machin-style), but the normal form cannot prove it; atan(1) = pi/4 itself is now read from the table
+    const r = S.equal("atan(1/2) + atan(1/3)", "pi/4");
     expect(r.verdict).toBe("undecided");
     expect(r.value).toBe(null);
     expect(String(r)).toContain("proves nothing");

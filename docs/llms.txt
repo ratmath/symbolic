@@ -2,14 +2,14 @@
 
 > Symbolic algebra for RatMath: expressions, rewriting, solving and closed forms, with every step checked by the certified libraries. Part of the RatMath Shelf; numbers come from @ratmath/core (a peer dependency). ESM: `import * as symbolic from "@ratmath/symbolic"`.
 
-Built from 0.2.0, commit 82e737b. `file:line` is relative to the package root (also node_modules/@ratmath/symbolic/); on GitHub: https://github.com/ratmath/symbolic/blob/82e737b/<file>#L<line>. Docs pages are under https://ratmath.com/symbolic/. Full types: index.d.ts.
+Built from 0.2.0, commit 54baa8c plus uncommitted changes. `file:line` is relative to the package root (also node_modules/@ratmath/symbolic/); on GitHub: https://github.com/ratmath/symbolic/blob/54baa8c/<file>#L<line>. Docs pages are under https://ratmath.com/symbolic/. Full types: index.d.ts.
 
 Types: `type ExprLike = string | Expr | Tree | number | bigint | Rational`; `type AssumptionOne = string | [number | string | Rational, number | string | Rational] | RationalInterval | Region`; `type AssumptionSpec = Record<string, AssumptionOne | AssumptionOne[]>`; `type Sign = "positive" | "negative" | "zero" | "nonnegative" | "nonpositive" | "nonzero" | "unknown"`; `type RuleSet = Rule | RuleSet[] | readonly RuleSet[] | { readonly [name: string]: RuleSet }`
 
 ## Docs
 
 - https://ratmath.com/symbolic/llms-full.txt: every page below as Markdown, each with a runnable example
-- Pages: index (Overview), reference (Reference), explore (Explore), expressions (Expressions), assumptions (Assumptions), normal-forms (Normal forms), rules (Rules), equality (Equality), solving (Solving equations), trig-equations (Trigonometric equations), systems (Systems of equations), inequalities (Inequalities), antiderivatives (Antiderivatives), limits (Limits), expansions (Expansions), sums (Sums), steps (Step records)
+- Pages: index (Overview), reference (Reference), explore (Explore), expressions (Expressions), assumptions (Assumptions), normal-forms (Normal forms), rules (Rules), equality (Equality), solving (Solving equations), trig-equations (Trigonometric equations), systems (Systems of equations), inequalities (Inequalities), antiderivatives (Antiderivatives), limits (Limits), expansions (Expansions), sums (Sums), school (School algebra), steps (Step records)
 
 ## API
 
@@ -29,14 +29,14 @@ name(params) → result — meaning · file:line · docs page
 - `Assumptions class: size, and, sign, isInteger, proves, samples, toString` · src/assume.js:348 · reference
 - `assume(spec?: AssumptionSpec | Assumptions) → Assumptions` — Assumptions from { x: "positive", n: "integer", t: [0, 1], u: "> 2", w: Region }. · src/assume.js:525 · assumptions
 - `parseCondition(text: string) → Condition` — "lhs > rhs" and friends as { op, lhs, rhs } with trees; "integer(n)" as { op: "integer", lhs }. · src/assume.js:528
-- `normal(x: ExprLike, options?: NormalOptions) → NormalForm` — The normal form with its parts: { expr, numerator, denominator, cancelled, kernels }. · src/normal.js:708 · normal-forms
-- `expand(x: ExprLike, options?: NormalOptions) → Expr` — Multiply out and collect: one fraction with expanded numerator and denominator, common factors cancelled. · src/normal.js:721 · normal-forms
-- `factor(x: ExprLike, options?: NormalOptions) → Expr` — Factor numerator and denominator over the rationals (kernels count as variables). · src/normal.js:746 · normal-forms
-- `collect(x: ExprLike, name?: string, options?: NormalOptions) → Expr` — Group by powers of one variable: c_n·x^n + … + c_0 with each coefficient in normal form. · src/normal.js:777 · normal-forms
-- `apart(x: ExprLike, name?: string, options?: NormalOptions) → Expr` — Partial fractions over the rationals in one variable (the only variable or kernel present). · src/normal.js:798 · normal-forms
-- `together: typeof expand` — The same normal form under the names it also goes by. · src/normal.js:723 · normal-forms
-- `cancel: typeof expand` · src/normal.js:724 · normal-forms
-- `isZero(x: ExprLike, options?: NormalOptions) → boolean | "nonzero"` — True when the normal form is 0, "nonzero" when it is a nonzero number, else false (nothing proven). · src/normal.js:727 · reference
+- `normal(x: ExprLike, options?: NormalOptions) → NormalForm` — The normal form with its parts: { expr, numerator, denominator, cancelled, kernels }. · src/normal.js:745 · normal-forms
+- `expand(x: ExprLike, options?: NormalOptions) → Expr` — Multiply out and collect: one fraction with expanded numerator and denominator, common factors cancelled. · src/normal.js:758 · normal-forms
+- `factor(x: ExprLike, options?: NormalOptions) → Expr` — Factor numerator and denominator over the rationals (kernels count as variables). · src/normal.js:783 · normal-forms
+- `collect(x: ExprLike, name?: string, options?: NormalOptions) → Expr` — Group by powers of one variable: c_n·x^n + … + c_0 with each coefficient in normal form. · src/normal.js:814 · normal-forms
+- `apart(x: ExprLike, name?: string, options?: NormalOptions) → Expr` — Partial fractions over the rationals in one variable (the only variable or kernel present). · src/normal.js:835 · normal-forms
+- `together: typeof expand` — The same normal form under the names it also goes by. · src/normal.js:760 · normal-forms
+- `cancel: typeof expand` · src/normal.js:761 · normal-forms
+- `isZero(x: ExprLike, options?: NormalOptions) → boolean | "nonzero"` — True when the normal form is 0, "nonzero" when it is a nonzero number, else false (nothing proven). · src/normal.js:764 · reference
 - `rewrite(x: ExprLike, rules: RuleSet, options?: RewriteOptions) → RewriteResult` — Apply rules until none applies (innermost first, at most `maxSteps` times). · src/rewrite.js:96 · rules
 - `match(pattern: ExprLike, target: ExprLike, bindings?: Record<string, Tree>) → Record<string, Tree> | null` — Bindings { name_: tree } that make the pattern equal to the tree, or null. · src/rewrite.js:18 · reference
 - `rule(from: ExprLike, to: ExprLike, options?: RuleOptions) → Rule` — rule("log(a_*b_)", "log(a_) + log(b_)", { when: ["a_ > 0", "b_ > 0"], name: "log of a product" }) · src/rewrite.js:64 · rules
@@ -49,16 +49,16 @@ name(params) → result — meaning · file:line · docs page
 - `parse` — from @ratmath/analytic
 - `format` — from @ratmath/analytic
 - `differentiate` — from @ratmath/analytic
-- `solve(equation: ExprLike, variable?: string, options?: SolveOptions) → Solutions` — Solve an equation for one real variable. solve("x^2 - 5x + 6 = 0") x = 2, 3 solve("sqrt(x + 3) = x - 3") x = 6, with x = 1 rejected solve("2*sin(x) = 1")… · src/solve.js:1041 · solving
-- `solveInequality(inequality: string, variable?: string, options?: SolveOptions) → RealSet` — Solve an inequality in one real variable: the answer is a RealSet. solveInequality("x^2 - 3x + 2 > 0") (-inf, 1) U (2, inf) solveInequality("(x - 1)/(x + 2)… · src/solve.js:1300 · inequalities
-- `Solutions class: variable, solutions, rejected, complete, all, set, conditions, notes, steps, values, Symbol.iterator, toString` — The outcome of solve(). solutions the solutions, in increasing order (families last) rejected candidates that the algebra produced and the check refused,… · src/solve.js:744 · reference
+- `solve(equation: ExprLike, variable?: string, options?: SolveOptions) → Solutions` — Solve an equation for one real variable. solve("x^2 - 5x + 6 = 0") x = 2, 3 solve("sqrt(x + 3) = x - 3") x = 6, with x = 1 rejected solve("2*sin(x) = 1")… · src/solve.js:1103 · solving
+- `solveInequality(inequality: string, variable?: string, options?: SolveOptions) → RealSet` — Solve an inequality in one real variable: the answer is a RealSet. solveInequality("x^2 - 3x + 2 > 0") (-inf, 1) U (2, inf) solveInequality("(x - 1)/(x + 2)… · src/solve.js:1428 · inequalities
+- `Solutions class: variable, solutions, rejected, complete, all, set, conditions, notes, steps, values, within, Symbol.iterator, toString` — The outcome of solve(). solutions the solutions, in increasing order (families last) rejected candidates that the algebra produced and the check refused,… · src/solve.js:744 · reference
 - `Solution class: period, kind, verified, where, enclosure, approx, member, toString` — One solution. · src/solve.js:706 · solving
-- `RealSet class: pieces, isEmpty, isAll, contains, toRegionText, toString` — A set of real numbers: a finite union of intervals and points. pieces [{ lo, hi, loClosed, hiClosed }] in increasing order; lo and hi are Exprs or null… · src/solve.js:1206 · reference
+- `RealSet class: pieces, isEmpty, isAll, contains, intersect, union, complement, toRegionText, toString` — A set of real numbers: a finite union of intervals and points. pieces [{ lo, hi, loClosed, hiClosed }] in increasing order; lo and hi are Exprs or null… · src/solve.js:1268 · reference
 - `integrate(f: ExprLike, variable?: string, options?: IntegrateOptions) → Antiderivative` — An antiderivative, checked by differentiating it. integrate("x*exp(x)") x*exp(x) - exp(x) by parts integrate("1/(x^2 - 1)") log|x - 1|/2 - log|x + 1|/2… · src/calculus.js:592 · antiderivatives
-- `Antiderivative class: integrand, variable, found, result, verified, checkedAt, steps, value, enclosure, agrees, note, toString` — The outcome of integrate(). · src/calculus.js:562 · reference
-- `taylor(f: ExprLike, variable?: string, about?: ExprLike | number, order?: number, options?: Options) → Expansion` — The expansion of an expression about a point, with exact coefficients. taylor("exp(x)", "x", 0, 4) 1 + x + x^2/2 + x^3/6 + x^4/24 taylor("1/(x*(1 - x))",… · src/calculus.js:766 · limits
-- `limit(f: ExprLike, variable?: string, at?: ExprLike | number | "inf" | "-inf", options?: Options & { side?: "left" | "right" }) → Limit` — A limit in closed form. limit("sin(x)/x", "x", 0) 1 limit("(x^2 - 1)/(x - 1)", "x", 1) 2 limit("(1 - cos(x))/x^2", "x", 0) 1/2 limit("1/x", "x", 0) no… · src/calculus.js:847 · limits
-- `Limit class: expression, variable, at, side, kind, value, method, confirmed, enclosure, reason, toString` — The outcome of limit(). · src/calculus.js:812 · reference
+- `Antiderivative class: integrand, variable, found, result, verified, checkedAt, steps, value, enclosure, agrees, improper, diverges, note, toString` — The outcome of integrate(). · src/calculus.js:562 · reference
+- `taylor(f: ExprLike, variable?: string, about?: ExprLike | number, order?: number, options?: Options) → Expansion` — The expansion of an expression about a point, with exact coefficients. taylor("exp(x)", "x", 0, 4) 1 + x + x^2/2 + x^3/6 + x^4/24 taylor("1/(x*(1 - x))",… · src/calculus.js:824 · limits
+- `limit(f: ExprLike, variable?: string, at?: ExprLike | number | "inf" | "-inf", options?: Options & { side?: "left" | "right" }) → Limit` — A limit in closed form. limit("sin(x)/x", "x", 0) 1 limit("(x^2 - 1)/(x - 1)", "x", 1) 2 limit("(1 - cos(x))/x^2", "x", 0) 1/2 limit("1/x", "x", 0) no… · src/calculus.js:905 · antiderivatives
+- `Limit class: expression, variable, at, side, kind, value, method, confirmed, enclosure, reason, toString` — The outcome of limit(). · src/calculus.js:870 · reference
 - `solveSystem(equations: ExprLike[] | Array<[ExprLike, ExprLike]>, variables?: string[], options?: Options) → SystemSolutions` — Solve a system of equations for several unknowns. solveSystem(["x + y = 3", "x - y = 1"]) x = 2, y = 1 solveSystem(["a*x + y = 1", "x - y = 0"], ["x", "y"])… · src/system.js:325 · systems
 - `SystemSolutions class: variables, kind, solutions, rejected, complete, conditions, notes, steps, length, Symbol.iterator, toString` — The outcome of solveSystem(). solutions each a { values: { x: Expr, … }, free: [names], verified }; a family keeps its free unknowns as themselves (z = z)… · src/system.js:85 · reference
 - `sum(f: ExprLike, index?: string, from?: ExprLike | number, to?: ExprLike | number | "inf", options?: Options) → Sum` — Σ f(k) for k = from … to, in closed form. sum("k", "k", 1, "n") n*(n + 1)/2 sum("k^3", "k", 1, "n") n^2*(n + 1)^2/4 sum("k*2^k", "k", 0, "n") (n - 1)*2^(n +… · src/sums.js:296 · sums
@@ -67,6 +67,11 @@ name(params) → result — meaning · file:line · docs page
 - `Step class: rule, detail, from, to, check, checkedAt, toString, toTeX` — One step: a named rule, what it did, and how it was checked. · src/steps.js:40 · reference
 - `Derivation class: operation, input, result, steps, omitted, length, Symbol.iterator, toString, toTeX` — An operation's result with the checked steps that produced it. · src/steps.js:63 · steps
 - `plan: readonly PlannedPhase[]` · src/plan.js:5 · reference
+- `completeSquare(expr: ExprLike, x?: string) → { form: Expr; a: Expr; h: Expr; k: Expr; vertex: [Expr, Expr]; verified: "proven" }` — a·x² + b·x + c written as a(x − h)² + k, with h = −b/(2a) and k = c − b²/(4a). · src/school.js:50 · school
+- `compose(f: ExprLike, g: ExprLike, x?: string) → { value: Expr; unsimplified: Expr; domain: RealSet | null; note: string | null }` — f ∘ g: f with g put in for its variable. compose("x^2 + 1", "2x - 3") { value: 4*x^2 - 12*x + 10, … } compose("sqrt(x)", "x - 3") domain [3, inf): where g's… · src/school.js:106 · school
+- `sinusoid(expr: ExprLike, x?: string) → { fn: "sin" | "cos"; amplitude: Expr; A: Expr; B: Expr; C: Expr; D: Expr; period: Expr; frequency: Expr; phaseShift: Expr; midline: Expr; form: Expr; verified: "proven" | "checked"; }` — Read a sinusoid A·sin(B·x + C) + D, also given with cos or as a sum a·sin(Bx + C₁) + b·cos(Bx + C₂) + D, which is rewritten as one sine. sinusoid("3sin(2x -… · src/school.js:175 · school
+- `implicitDiff(F: ExprLike, x?: string, y?: string, options?: { order?: 1 | 2 }) → { first: Expr; second: Expr | null; steps: ReadonlyArray<{ rule: string; detail: string }>; at(point: Record<string, ExprLike | number>): { first: …` — dy/dx for a curve F(x, y) = 0 (or "lhs = rhs"): differentiate both sides with y a function of x and solve for y′, which gives y′ = −F_x/F_y.… · src/school.js:284 · school
+- `leibniz(f: ExprLike, t?: string, lower?: ExprLike | number, upper?: ExprLike | number, x?: string) → { value: Expr | null; boundary: Expr; integral: Expr | null; steps: ReadonlyArray<{ rule: string; detail: string }>; }` — d/dx ∫_{a(x)}^{b(x)} f(x, t) dt = f(x, b)·b′ − f(x, a)·a′ + ∫_a^b ∂f/∂x dt. leibniz("cos(t)", "t", "0", "x^2") 2*x*cos(x^2) → { value, boundary, integral,… · src/school.js:321 · school
 
 ## Example
 

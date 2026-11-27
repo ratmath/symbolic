@@ -36,7 +36,15 @@ String(solveInequality("x^3 - x &gt;= 0"));     // [-1, 0] U [1, inf)
 String(solveInequality("1/x &lt; 1"));          // (-inf, 0) U (1, inf)
 String(solveInequality("sqrt(x) &lt; x - 2"));  // (4, inf)
 String(solveInequality("x^2 &lt; -1"));         // no real number</code></pre>
-<p>The comparison is one of <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code> and <code>!=</code>.</p>
+<p>The comparison is one of <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code> and <code>!=</code>. A chain such as <code>-3 &lt; 2x + 1 &lt;= 7</code> is read as both inequalities at once, the intersection of the two sets.</p>
+
+<h2>Combining sets</h2>
+<pre><code>const a = solveInequality("x^2 &lt; 4"), b = solveInequality("x &gt;= 1");
+String(a.intersect(b));    // [1, 2)
+String(a.union(b));        // (-2, inf)
+String(a.complement());    // (-inf, -2] U [2, inf)
+String(solveInequality("-3 &lt; 2x + 1 &lt;= 7"));   // (-2, 3]</code></pre>
+<p><code>intersect</code>, <code>union</code> and <code>complement</code> put every end of both sets in order (comparing them exactly, so \(\sqrt2\) and \(\tfrac{99}{70}\) are told apart and \(\sqrt8/2\) and \(\sqrt2\) are proven equal) and decide each end and each gap between ends separately. No end falls inside a gap, so a gap is wholly inside a set or wholly outside it.</p>
 
 <h2>The method of critical points</h2>
 <p>Write the inequality as \(h(x) < 0\) with \(h = f - g\). A function built from the usual pieces can change sign only where it is zero or where it stops being continuous or defined. Those are the <em>critical points</em>: the solutions of \(h(x) = 0\), the zeros of every denominator, and the ends of the domains of roots and logarithms. Between two neighbouring critical points \(h\) keeps one sign, so one test point decides the whole piece.</p>
@@ -77,6 +85,10 @@ show("cos(x) &lt;= 0", { range: [0, "2*pi"] });
 const s = show("x^2 &gt; 2");
 PRINT("3/2 in the set?", s.contains(new Rational(3, 2)));   // (3/2)^2 = 9/4 &gt; 2
 PRINT("7/5 in the set?", s.contains(new Rational(7, 5)));   // (7/5)^2 = 49/25 &lt; 2
+// chains and set operations
+show("-3 &lt; 2x + 1 &lt;= 7");
+const inside = solveInequality("x^2 &lt;= 9"), away = solveInequality("abs(x - 1) &gt; 1");
+PRINT("x^2 &lt;= 9 and |x - 1| &gt; 1:", String(inside.intersect(away)), "  either:", String(inside.union(away)), "  not x^2 &lt;= 9:", String(inside.complement()));
 s.pieces.length + " pieces"
 </template>
 </article>

@@ -445,11 +445,48 @@ class Ctx {
         return this.prepTrig(name, a, "sinh", "cosh", -1);
       }
     }
+    if (name === "asin" || name === "acos" || name === "atan") {
+      const exact = this.inverseTrigValue(name, a);
+      if (exact) return this.prep(exact);
+    }
     // anything else is opaque, with its arguments in normal form
     const args = n.args.map((x) => this.sub(x).tree);
     const t = call(n.name, ...args);
     const k = this.kernel(`fn|${key(t)}`, { kind: "opaque", tree: t });
     return (E) => E.gen(k.name);
+  }
+
+  /**
+   * asin, acos or atan at one of the standard exact values (0, ±1/2, ±√2/2,
+   * ±√3/2, ±1 for asin and acos; 0, ±√3/3, ±1, ±√3 for atan), as a rational
+   * multiple of pi, or null. The argument is matched by the normal form of
+   * the difference, so any equal way of writing it is recognised.
+   */
+  inverseTrigValue(name, a) {
+    const s2 = op("/", call("sqrt", num(2)), num(2));
+    const s3 = op("/", call("sqrt", num(3)), num(2));
+    const t3 = op("/", call("sqrt", num(3)), num(3));
+    const piTimes = (p, q) => (p === 0 ? num(0) : op("*", num(Q(p, q)), PI_AST));
+    const sine = [[num(0), 0, 1], [num(Q(1, 2)), 1, 6], [s2, 1, 4], [s3, 1, 3], [num(1), 1, 2]];
+    const tangent = [[num(0), 0, 1], [t3, 1, 6], [num(1), 1, 4], [call("sqrt", num(3)), 1, 3]];
+    const table = name === "atan" ? tangent : sine;
+    const zero = (t) => {
+      try {
+        return this.sub(t).frac.isZero();
+      } catch (e) {
+        if (e?.name === "SymbolicError" || e instanceof RangeError) return false;
+        throw e;
+      }
+    };
+    for (const [w, p, q] of table) {
+      for (const sign of p === 0 ? [1] : [1, -1]) {
+        if (!zero(sign > 0 ? op("-", a, w) : op("+", a, w))) continue;
+        // asin and atan are odd; acos(w) = pi/2 − asin(w)
+        if (name === "acos") return op("-", piTimes(1, 2), sign > 0 ? piTimes(p, q) : op("neg", piTimes(p, q)));
+        return sign > 0 ? piTimes(p, q) : op("neg", piTimes(p, q));
+      }
+    }
+    return null;
   }
 
   /**
