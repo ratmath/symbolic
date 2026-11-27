@@ -7,3 +7,6 @@
 [submodule "vendor/structures"]
 	path = vendor/structures
 	url = https://github.com/ratmath/structures.git
+[submodule "vendor/linalg"]
+	path = vendor/linalg
+	url = https://github.com/ratmath/linalg.git

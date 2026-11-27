@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- The `@ratmath/structures` range is now `^0.5.0` (was `^0.1.0`, which under 0.x
+  rejects structures 0.5.0, so the package could not be installed from npm).
 - Improper integrals: `integrate(f, x, { from, to })` takes `"inf"` and
   `"-inf"` as ends (they were read as a letter named inf, giving
   `(inf - 1)/inf`), and an integrand unbounded at an end. The value is the
