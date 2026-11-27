@@ -57,6 +57,7 @@ s.verified;                  // "proven"</code></pre>
 <h2>Infinite sums</h2>
 <p>\(\sum_{k=a}^{\infty} f(k)\) is the limit of \(F(n+1) - F(a)\). A polynomial times \(r^n\) tends to 0 when \(|r| < 1\), and a telescoping remainder \(\sum c/(n+b+i)\) tends to 0; otherwise <a href="limits.html"><code>limit</code></a> is asked. Divergence is proven when the terms do not tend to 0, or, for a rational term of size about \(1/k\), by comparison with the harmonic series.</p>
 <p>A few famous sums have no antidifference at all. They are in a short table: \(\sum 1/k^2 = \pi^2/6\), \(\sum 1/k^4 = \pi^4/90\), \(\sum 1/k^6 = \pi^6/945\), \(\sum (-1)^{k+1}/k = \log 2\), \(\sum (-1)^k/(2k+1) = \pi/4\), \(\sum (-1)^{k+1}/k^2 = \pi^2/12\) and \(\sum 1/(2k-1)^2 = \pi^2/8\), and their multiples and shifts. A value from the table is not proven here; it is <em>checked</em>: the exact partial sum to 400 terms must lie within a proven bound on the tail (for \(\sum 1/k^2\), the tail after \(N\) is less than \(1/N\); for an alternating series, less than the first term left out).</p>
+<p>A factor that does not contain the index comes outside the sum first, \(\sum c\,f(k) = c\sum f(k)\), so \(\sum 4/(n^2\pi^2) = \tfrac{4}{\pi^2}\cdot\tfrac{\pi^2}{6} = \tfrac23\) and \(\sum a\,k\) works with a letter \(a\). The step record names the factor.</p>
 <template data-runbox>
 // Sums of powers, side by side with the direct sum for n = 10
 for (const j of [1, 2, 3, 4, 5]) {
@@ -71,6 +72,9 @@ for (const [f, a, b] of [["3*(2/3)^k", 0, "inf"], ["k^2/2^k", 1, "inf"], ["1/(k^
 
 // Famous values and divergent sums
 for (const [f, a] of [["1/k^4", 1], ["(-1)^(k+1)/k", 1], ["1/(2k-1)^2", 1], ["1/(2k + 1)", 0], ["(5/4)^k", 0]]) PRINT(String(sum(f, "k", a, "inf")));
+
+// A constant factor comes outside: Parseval's identity for f(x) = x on (-1, 1)
+PRINT(String(sum("4/(n^2*pi^2)", "n", 1, "inf")));
 
 sum("k*r^k", "k", 0, "inf").toString()
 </template>

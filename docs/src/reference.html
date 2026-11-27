@@ -76,7 +76,8 @@
 <tr><td><code>solveInequality(inequality, name, options)</code></td><td>The <code>RealSet</code> where <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code> or <code>!=</code> holds. Options: <code>assume</code>, <code>range</code> (needed for periodic inequalities).</td></tr>
 <tr><td><code>solveSystem(equations, variables, options)</code></td><td>A <code>SystemSolutions</code> object for a list of equations in several unknowns (default: every letter, sorted). Linear systems by Gauss–Jordan with letters allowed in the coefficients; others by substitution and resultants. Option <code>assume</code>.</td></tr>
 <tr><td><code>SystemSolutions</code></td><td><code>variables</code>, <code>kind</code> (<code>"linear"</code> or <code>"nonlinear"</code>), <code>solutions</code> (each <code>{ values: { x: Expr, … }, free, verified }</code>; a free unknown is its own value), <code>rejected</code>, <code>complete</code>, <code>conditions</code>, <code>notes</code>, <code>steps</code>. Iterable.</td></tr>
-<tr><td><code>RealSet</code></td><td><code>pieces</code> (<code>{ lo, hi, loClosed, hiClosed }</code>, <code>null</code> for an unbounded end), <code>isEmpty</code>, <code>isAll</code>, <code>contains(q)</code>, <code>toRegionText()</code>.</td></tr>
+<tr><td><code>RealSet</code></td><td><code>pieces</code> (<code>{ lo, hi, loClosed, hiClosed }</code>, <code>null</code> for an unbounded end), <code>isEmpty</code>, <code>isAll</code>, <code>contains(q)</code>, <code>intersect(other)</code>, <code>union(other)</code>, <code>complement()</code>, <code>toRegionText()</code>. <code>solveInequality</code> reads a chain <code>a &lt; b &lt;= c</code> as the intersection.</td></tr>
+<tr><td><code>solutions.within(lo, hi)</code></td><td>The solutions in an interval, families listed member by member, as Exprs in order; <code>within("[0, 2*pi)")</code> for open and closed ends.</td></tr>
 </table></div>
 <h2>Calculus</h2>
 <div class="tablewrap"><table class="ref">
@@ -85,7 +86,16 @@
 <tr><td><code>limit(f, name, at, options)</code></td><td>A <code>Limit</code>: <code>kind</code> (<code>"finite"</code>, <code>"inf"</code>, <code>"-inf"</code>, <code>"none"</code>, <code>"numeric"</code>, <code>"unknown"</code>), <code>value</code>, <code>method</code>, <code>confirmed</code>, <code>enclosure</code>, <code>reason</code>. <code>at</code> is an expression, <code>"inf"</code> or <code>"-inf"</code>; option <code>side: "left" | "right"</code>.</td></tr>
 <tr><td><code>taylor(f, name, about, order)</code></td><td><code>{ polynomial, coefficients, lowest, order, about }</code>: exact coefficients of <code>(x − about)^(lowest + i)</code>; <code>lowest</code> is negative at a pole.</td></tr>
 <tr><td><code>sum(f, index, from, to, options)</code></td><td>A <code>Sum</code>: <code>value</code> (an <code>Expr</code>, <code>"inf"</code>, <code>"-inf"</code> or <code>null</code>), <code>antidifference</code> (proven, or <code>null</code>), <code>method</code>, <code>verified</code> (<code>"proven"</code>, <code>"checked"</code> for a table value, or <code>null</code>), <code>diverges</code>, <code>conditions</code>, <code>steps</code>, <code>note</code>. <code>to</code> may be <code>"inf"</code>. Option <code>assume</code>.</td></tr>
+<tr><td><code>implicitDiff(F, x = "x", y = "y", { order })</code></td><td><code>{ first, second, steps, at(point) }</code>: \(y' = -F_x/F_y\) for a curve <code>"lhs = rhs"</code>, and \(y''\) with <code>order: 2</code>. See <a href="school.html">School algebra</a>.</td></tr>
+<tr><td><code>leibniz(f, t, lower, upper, x = "x")</code></td><td>\(\frac{d}{dx}\int_{a(x)}^{b(x)} f\,dt\): <code>{ value, boundary, integral, steps }</code>.</td></tr>
 <tr><td><code>Expr</code> methods</td><td><code>.solve(name, options)</code>, <code>.integrate(name, options)</code>, <code>.limit(name, at, options)</code>, <code>.taylor(name, about, order)</code>.</td></tr>
+</table></div>
+<h2>School algebra</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>completeSquare(expr, x = "x")</code></td><td><code>{ form, a, h, k, vertex, verified }</code>: \(a(x-h)^2 + k\), checked by expanding.</td></tr>
+<tr><td><code>compose(f, g, x = "x")</code></td><td><code>{ value, unsimplified, domain, note }</code>: \(f(g(x))\), with the set where it is defined and a note when \(g\) leaves the domain of \(f\).</td></tr>
+<tr><td><code>sinusoid(expr, x = "x")</code></td><td><code>{ fn, amplitude, A, B, C, D, period, frequency, phaseShift, midline, form, verified }</code> for \(A\sin(Bx + C) + D\), also from \(a\sin + b\cos\).</td></tr>
 </table></div>
 <h2>Step records</h2>
 <div class="tablewrap"><table class="ref">

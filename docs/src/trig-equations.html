@@ -34,7 +34,7 @@ r.conditions;      // ["abs(a) &lt;= 1"]
 const s = solve("2sin(x) = 1").solutions[0];
 String(s.period);       // "2*pi"
 String(s.member(1));    // "13*pi/6"</code></pre>
-<p>With <code>{ range: [lo, hi] }</code> the families are listed member by member inside the range, as on the <a href="solving.html">Solving</a> page.</p>
+<p>With <code>{ range: [lo, hi] }</code> the families are listed member by member inside the range, as on the <a href="solving.html">Solving</a> page. After solving, <code>within(lo, hi)</code> does the same for any interval: <code>solve("2cos(x)^2 - cos(x) - 1 = 0").within("[0, 2*pi)")</code> is \(0, \tfrac{2\pi}{3}, \tfrac{4\pi}{3}\). Write the ends as text with brackets to choose open or closed ends; each member is placed by an exact comparison with the ends.</p>
 
 <h2>The general solution of the basic equations</h2>
 <p>Each of the three basic equations has a principal solution from the inverse function and a rule for the others:</p>
@@ -58,6 +58,7 @@ String(s.member(1));    // "13*pi/6"</code></pre>
 <h2>What the normal form knows</h2>
 <p>To check a family with a letter in it, the solution is put back and the difference reduced to zero. That needs a few identities, which the <a href="normal-forms.html">normal form</a> now applies wherever the left side is defined:</p>
 \[ \sin(\arcsin w) = w,\quad \cos(\arcsin w) = \sqrt{1-w^2},\quad \sin(\arctan w) = \frac{w}{\sqrt{1+w^2}},\quad \sin(w + \pi) = -\sin w,\quad \cos(w + \tfrac{\pi}{2}) = -\sin w. \]
+<p>The inverse functions themselves are evaluated at the standard exact values: \(\arcsin\) and \(\arccos\) at \(0, \pm\tfrac12, \pm\tfrac{\sqrt2}2, \pm\tfrac{\sqrt3}2, \pm1\), and \(\arctan\) at \(0, \pm\tfrac{\sqrt3}3, \pm1, \pm\sqrt3\). The argument is matched by the normal form, so <code>asin(1/sqrt(2))</code> is recognised as \(\tfrac{\sqrt2}{2}\) and simplifies to \(\tfrac{\pi}{4}\); <code>asin(-sqrt(3)/2)</code> is \(-\tfrac{\pi}{3}\).</p>
 <p>The square roots are right, not just up to sign, because \(\arcsin\) and \(\arctan\) take values in \([-\pi/2, \pi/2]\), where the cosine is not negative; \(\arccos\) takes values in \([0, \pi]\), where the sine is not negative.</p>
 <template data-runbox>
 // Equations from a trigonometry course, with the method each one used.
@@ -75,6 +76,10 @@ for (const eq of [
   PRINT(eq.padEnd(30), String(r).split("\n")[0]);
   PRINT("".padEnd(30), "by:", r.steps.map((s) =&gt; s.rule).filter((s) =&gt; s !== "linear").slice(0, 3).join(", "));
 }
+
+// The members in one turn, and inverse functions at exact values
+PRINT("in [0, 2pi):", solve("2cos(x)^2 - cos(x) - 1 = 0").within("[0, 2*pi)").map(String).join(", "));
+PRINT(["asin(-sqrt(3)/2)", "acos(-1/2)", "atan(1/sqrt(3))", "cos(atan(3/4))"].map((e) =&gt; `${e} = ${simplify(e)}`).join(";  "));
 
 // A letter: the condition comes back
 String(solve("cos(2x) = b", "x"))

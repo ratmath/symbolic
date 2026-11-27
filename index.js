@@ -25,6 +25,7 @@ export { solveSystem, SystemSolutions } from "./src/system.js";
 export { sum, Sum } from "./src/sums.js";
 export { explain, Step, Derivation } from "./src/steps.js";
 export { plan } from "./src/plan.js";
+export { completeSquare, compose, sinusoid, implicitDiff, leibniz } from "./src/school.js";
 import { explain } from "./src/steps.js";
 
 // the operations as methods, so they chain: sym("(x+1)^2").expand().diff("x")
