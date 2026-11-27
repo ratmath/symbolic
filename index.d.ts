@@ -266,6 +266,7 @@ export function solveInequality(inequality: string, variable?: string, options?:
 // ---- calculus ----
 
 export interface IntegrateOptions extends Options {
+  /** An end: a number, an expression, or "inf" / "-inf" for an improper integral. */
   from?: ExprLike | number;
   to?: ExprLike | number;
 }
@@ -285,6 +286,10 @@ export class Antiderivative {
   readonly enclosure?: { low: Rational; high: Rational } | null;
   /** Whether the exact value lies in the certified enclosure. */
   readonly agrees?: boolean | null;
+  /** True for an improper integral (an infinite end, or an integrand unbounded at an end): the value is lim F(b) − lim F(a), judged by the certified improper integral. */
+  readonly improper?: boolean;
+  /** True when the improper integral is proven to diverge. */
+  readonly diverges?: boolean;
   readonly note?: string | null;
   toString(): string;
 }

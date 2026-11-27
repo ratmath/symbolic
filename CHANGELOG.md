@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Improper integrals: `integrate(f, x, { from, to })` takes `"inf"` and
+  `"-inf"` as ends (they were read as a letter named inf, giving
+  `(inf - 1)/inf`), and an integrand unbounded at an end. The value is the
+  difference of the one-sided limits of the antiderivative, offered only when
+  analytic's certified improper integral agrees; proven divergence sets
+  `diverges`. So ∫₁^∞ 1/x² = 1, ∫₀¹ 1/√x = 2 and ∫₀¹ log x = −1 now have
+  values. Found by the Course Test (ratmath/shelf#7).
 - `@ratmath/core` is now a peer dependency (`>=0.10.0 <0.12.0`): the package
   uses the program's own copy of Core instead of bringing its own, so Core 0.11
   works and there is never a second copy whose `Rational` is not the same class.

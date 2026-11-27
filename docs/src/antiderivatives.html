@@ -77,6 +77,12 @@ const bad = integrate("1/x^2", "x", { from: -1, to: 1 });
 bad.value;            // null
 bad.note;             // "the integrand could not be bounded on the interval (it may be undefined or unbounded inside), so F(b) − F(a) is not offered as the integral"</code></pre>
 <p>Without that check the formula gives \(\left[-1/x\right]_{-1}^{1} = -2\) for the integral of a positive function.</p>
+<h3>Improper integrals</h3>
+<p>An end may be <code>"inf"</code> or <code>"-inf"</code>, and the integrand may be unbounded at an end. Then the value is \(\lim_{x\to b^-} F(x) - \lim_{x\to a^+} F(x)\), with both limits found by <code>limit</code>, and the judge is the certified improper integral from analytic, which also proves divergence. Without a certificate nothing is offered, since the integrand might blow up inside the interval.</p>
+<pre><code>integrate("1/x^2", "x", { from: 1, to: "inf" }).value;        // 1
+integrate("1/sqrt(x)", "x", { from: 0, to: 1 }).value;         // 2
+integrate("1/(1 + x^2)", "x", { from: "-inf", to: "inf" }).value;   // pi
+integrate("1/x", "x", { from: 1, to: "inf" }).diverges;       // true</code></pre>
 <template data-runbox>
 // What was found, how it was verified, and by which methods.
 const show = (f) =&gt; {

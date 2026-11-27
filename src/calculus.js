@@ -677,7 +677,59 @@ Integrator.prototype.tidyResult = function (raw, A) {
   });
 };
 
+const INFINITE_END = /^[+-]?(inf|infinity|∞)$/;
+const isInfiniteEnd = (p) => typeof p === "string" && INFINITE_END.test(p.trim());
+const endText = (p) => (p.trim().startsWith("-") ? "-inf" : "inf");
+
+/**
+ * An improper integral: an infinite end, or an integrand that cannot be bounded
+ * up to an end. The value is the difference of the one-sided limits of the
+ * antiderivative at the ends; the judge is @ratmath/analytic's certified
+ * improper integral, which also proves divergence.
+ */
+function improper(t, F, x, from, to, A, out) {
+  const at = (p, side) => {
+    const L = soft(() => limit(F, x, isInfiniteEnd(p) ? endText(p) : p, isInfiniteEnd(p) ? {} : { side }));
+    return L?.kind === "finite" ? tree(L.value) : L?.kind === "inf" || L?.kind === "-inf" ? L.kind : null;
+  };
+  const end = (p) => (isInfiniteEnd(p) ? endText(p) : soft(() => build(tree(p), {}).rational()));
+  const ea = end(from);
+  const eb = end(to);
+  const cert = ea !== null && eb !== null ? soft(() => fn(t, { variable: x }).improperIntegral(ea, eb).exact()) : null;
+  out.improper = true;
+  if (cert === Infinity || cert === -Infinity) {
+    out.value = null;
+    out.diverges = true;
+    out.note = `the integral diverges (to ${cert > 0 ? "" : "-"}infinity), proven by certified asymptotics`;
+    return out;
+  }
+  const Fb = at(to, "left");
+  const Fa = at(from, "right");
+  const finite = (e) => e !== null && typeof e !== "string";
+  const value = finite(Fa) && finite(Fb) ? soft(() => fold(expand(op("-", Fb, Fa), { assume: A }).tree)) : null;
+  const numeric = cert && cert.low !== undefined ? { low: cert.low, high: cert.high } : null;
+  out.enclosure = numeric;
+  if (!value) {
+    out.note = numeric ? "the antiderivative has no finite limit found at an end; the certified value is in enclosure" : "the limits of the antiderivative at the ends could not be found";
+    return out;
+  }
+  const exact = soft(() => evaluate(value, {}, 128));
+  if (!numeric) {
+    // without a certificate the limits are not offered: the integrand may blow up inside the interval
+    out.note = `the limits of F at the ends give ${format(value)}, but the integral could not be certified (the integrand may be unbounded inside the interval), so that is not offered as its value`;
+    return out;
+  }
+  out.agrees = exact ? !(exact.high.compareTo(numeric.low) < 0 || numeric.high.compareTo(exact.low) < 0) : null;
+  if (out.agrees) out.value = new Expr(value);
+  else out.note = exact ? "the limits of F at the ends disagree with the certified improper integral" : "F(b) − F(a) could not be evaluated";
+  return out;
+}
+
 function definite(t, F, x, from, to, A) {
+  if (isInfiniteEnd(from) || isInfiniteEnd(to)) {
+    const show = (p) => new Expr(isInfiniteEnd(p) ? v(endText(p)) : tree(p));
+    return improper(t, F, x, from, to, A, { from: show(from), to: show(to), value: null, enclosure: null, agrees: null, note: null });
+  }
   const a = tree(from);
   const b = tree(to);
   const at = (p) => fold(substitute(F, { [x]: p }));
@@ -704,6 +756,12 @@ function definite(t, F, x, from, to, A) {
     return flip ? { low: r.iv.hi.negate(), high: r.iv.lo.negate() } : { low: r.iv.lo, high: r.iv.hi };
   });
   if (!numeric) {
+    if (exactEnds) {
+      // unbounded at an end, perhaps: try it as an improper integral
+      const r = improper(t, F, x, qa, qb, A, { ...out });
+      if (r.value || r.diverges) return r;
+      delete out.improper;
+    }
     out.note = "the integrand could not be bounded on the interval (it may be undefined or unbounded inside), so F(b) − F(a) is not offered as the integral";
     return out;
   }
