@@ -77,6 +77,22 @@ describe("definite integrals", () => {
     expect(r.value).toBe(null);
     expect(r.note).toContain("could not be bounded");
   });
+  test("improper integrals: infinite ends and unbounded ends", () => {
+    const r = integrate("1/x^2", "x", { from: 1, to: "inf" });
+    expect(String(r.value)).toBe("1");
+    expect(r.agrees).toBe(true);
+    expect(r.improper).toBe(true);
+    expect(String(r.to)).toBe("inf");
+    expect(String(integrate("exp(-x)", "x", { from: 0, to: "inf" }).value)).toBe("1");
+    expect(String(integrate("x*exp(-x)", "x", { from: 0, to: "infinity" }).value)).toBe("1");
+    expect(String(integrate("1/(1+x^2)", "x", { from: "-inf", to: "inf" }).value)).toBe("pi");
+    expect(String(integrate("1/sqrt(x)", "x", { from: 0, to: 1 }).value)).toBe("2");
+    expect(String(integrate("log(x)", "x", { from: 0, to: 1 }).value)).toBe("-1");
+    const d = integrate("1/x", "x", { from: 1, to: "inf" });
+    expect(d.value).toBe(null);
+    expect(d.diverges).toBe(true);
+    expect(d.note).toContain("diverges");
+  });
   test("letters in the ends", () => {
     const r = integrate("a*x", "x", { from: 0, to: "b" });
     expect(String(r.value)).toBe("a*b^2/2");
