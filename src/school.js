@@ -74,6 +74,8 @@ export function completeSquare(expr, x = "x") {
 
 // ---- composition --------------------------------------------------------------------
 
+/** Functions defined for every real number. */
+const ENTIRE = new Set(["sin", "cos", "exp", "atan", "abs", "sinh", "cosh", "tanh", "asinh", "cbrt", "sign", "erf"]);
 /** Conditions for a tree to be defined: [{ tree, rel }] meaning tree rel 0. */
 function definedWhere(t) {
   const out = [];
@@ -83,10 +85,16 @@ function definedWhere(t) {
     if (n.type === "op" && n.op === "/") out.push({ tree: n.args[1], rel: "!=" });
     else if (n.type === "call" && n.name === "sqrt") out.push({ tree: n.args[0], rel: ">=" });
     else if (n.type === "call" && (n.name === "log" || n.name === "ln")) out.push({ tree: n.args[0], rel: ">" });
+    else if (n.type === "call" && (n.name === "asin" || n.name === "acos")) out.push({ tree: op("-", num(1), op("^", n.args[0], num(2))), rel: ">=" });
+    else if (n.type === "call" && (n.name === "tan" || n.name === "sec")) out.push({ tree: call("cos", n.args[0]), rel: "!=" });
+    else if (n.type === "call" && (n.name === "cot" || n.name === "csc")) out.push({ tree: call("sin", n.args[0]), rel: "!=" });
+    else if (n.type === "call" && !ENTIRE.has(n.name)) out.unknown = true;
     else if (n.type === "op" && n.op === "^") {
       const e = rationalOf(n.args[1]);
-      if (e !== null && e.denominator % 2n === 0n) out.push({ tree: n.args[0], rel: ">=" });
-      else if (e !== null && e.numerator < 0n) out.push({ tree: n.args[0], rel: "!=" });
+      // a power with an exponent that is not a known rational has a domain this helper does not work out
+      if (e === null) out.unknown = true;
+      else if (e.denominator % 2n === 0n) out.push({ tree: n.args[0], rel: e.numerator < 0n ? ">" : ">=" });
+      else if (e.numerator < 0n) out.push({ tree: n.args[0], rel: "!=" });
     }
   };
   go(t);
@@ -108,11 +116,13 @@ export function compose(f, g, x = "x") {
   const gt = tree(g);
   const raw = substitute(ft, { [x]: gt });
   const value = tidy(raw);
-  const conditions = definedWhere(ft).map((c) => ({ tree: substitute(c.tree, { [x]: gt }), rel: c.rel }));
+  const conditions0 = definedWhere(ft);
+  const conditions = conditions0.map((c) => ({ tree: substitute(c.tree, { [x]: gt }), rel: c.rel }));
   let domain = null;
   let note = null;
   const vars = [...freeVariables(raw)];
-  if (vars.length <= 1) {
+  const gConditions = definedWhere(gt);
+  if (vars.length <= 1 && !conditions0.unknown && !gConditions.unknown) {
     const y = vars[0] ?? x;
     domain = soft(() => {
       let set = solveInequality(`${y} > 0`, y).union(solveInequality(`${y} <= 0`, y));
@@ -251,7 +261,8 @@ export function sinusoid(expr, x = "x") {
   else {
     const e = soft(() => equal(form, t));
     if (e && e.verdict === "different") throw new Error(`internal: ${format(form)} does not equal ${format(t)}`);
-    verified = "checked";
+    // "equal" is a proof; "undecided" still agreed at every certified sample point; no verdict at all is no check
+    verified = e && e.verdict === "equal" ? "proven" : e ? "checked" : "unverified";
   }
   const absB = Bq !== null ? num(Bq.abs()) : call("abs", B);
   return Object.freeze({

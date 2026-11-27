@@ -442,7 +442,7 @@ export function completeSquare(expr: ExprLike, x?: string): { form: Expr; a: Exp
 export function compose(f: ExprLike, g: ExprLike, x?: string): { value: Expr; unsimplified: Expr; domain: RealSet | null; note: string | null };
 export function sinusoid(expr: ExprLike, x?: string): {
   fn: "sin" | "cos"; amplitude: Expr; A: Expr; B: Expr; C: Expr; D: Expr;
-  period: Expr; frequency: Expr; phaseShift: Expr; midline: Expr; form: Expr; verified: "proven" | "checked";
+  period: Expr; frequency: Expr; phaseShift: Expr; midline: Expr; form: Expr; verified: "proven" | "checked" | "unverified";
 };
 export function implicitDiff(F: ExprLike, x?: string, y?: string, options?: { order?: 1 | 2 }): {
   first: Expr; second: Expr | null; steps: ReadonlyArray<{ rule: string; detail: string }>;

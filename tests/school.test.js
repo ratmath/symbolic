@@ -153,3 +153,20 @@ describe("constant factors in sums", () => {
     expect(String(at(S.sum("a*k", "k", 1, "n").value, { a: 3, n: 4 }))).toBe("30");
   });
 });
+
+describe("compose domains (review of batch A9)", () => {
+  test("inverse sine and cosine restrict the inside to [-1, 1]", () => {
+    expect(String(S.compose("asin(x)", "2x").domain)).toBe("[-1/2, 1/2]");
+    expect(String(S.compose("acos(x)", "x^2").domain)).toBe("[-1, 1]");
+  });
+  test("a negative half power excludes the zero of the inside", () => {
+    expect(String(S.compose("x^(-1/2)", "x - 1").domain)).toBe("(1, inf)");
+  });
+  test("where the domain is not worked out it is null, never all the reals", () => {
+    expect(S.compose("tan(x)", "x").domain).toBe(null);
+    expect(S.compose("x^x", "x - 1").domain).toBe(null);
+  });
+  test("an odd root keeps every real number", () => {
+    expect(String(S.compose("x^(1/3)", "x - 1").domain)).toBe("(-inf, inf)");
+  });
+});

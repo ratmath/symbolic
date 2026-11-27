@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Review of batch A9 (Course Test B1):
+  - `compose` domains: asin and acos restrict the inside to [−1, 1]; a negative
+    even-root power excludes the zero of the inside; tan, sec, cot, csc, powers
+    with a non-rational exponent and unknown functions give `domain: null`
+    instead of "all real numbers".
+  - `sinusoid` reports `verified: "unverified"` when no check could run, rather
+    than "checked".
 - School helpers from the Course Test roadmap (batch A9), each checked:
   - `completeSquare(expr, x)`: a(x − h)² + k and the vertex.
   - `compose(f, g)`: f(g(x)) with its domain and a note when g leaves f's domain.
