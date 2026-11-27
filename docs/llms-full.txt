@@ -1,0 +1,1644 @@
+# @ratmath/symbolic 0.2.0: full documentation
+
+> Symbolic algebra for RatMath: expressions, rewriting, solving and closed forms, with every step checked by the certified libraries. From https://ratmath.com/symbolic/, commit 82e737b. Each page ends with a runnable example; in it, PRINT(...) prints.
+
+
+---
+
+Page: https://ratmath.com/symbolic/index.html
+
+@ratmath/symbolic
+
+## Algebra on expressions, with every step checked
+
+Expand, factor and simplify expressions the way a computer algebra system does, with one difference: the exact and certified libraries sit underneath, so an answer says whether it is proven, refuted or undecided and is never just asserted.
+
+### What is here
+
+Expressions, assumptions, rewriting and equality; solving equations and inequalities in one variable, with whole families of solutions for trigonometric equations; systems of equations; antiderivatives, limits, expansions and sums in closed form; and, for every operation, the checked steps that produced the answer.
+
+### A first program
+
+```js
+import { sym, expand, factor, simplify, equal, rewrite, rules } from "@ratmath/symbolic";
+
+String(expand("(x + 1)^3"));              // "x^3 + 3*x^2 + 3*x + 1"
+String(factor("x^4 - 1"));                // "(x + 1)*(x - 1)*(x^2 + 1)"
+String(simplify("(x^2 - 1)/(x - 1)"));    // "x + 1"
+
+String(equal("sin(2x)", "2sin(x)cos(x)"));   // equal: a proof
+String(equal("sqrt(x^2)", "x"));             // different at x = -2/3: also a proof
+String(equal("sqrt(x^2)", "x", { assume: { x: "positive" } }));   // equal
+String(equal("atan(1)", "pi/4"));            // undecided, and it says so
+```
+
+Expressions are written in calculator notation: `2x`, `x^2`, `sqrt(x)`, `sin(x)`, `log` for the natural logarithm, `pi` and `e`. Every function takes text, an `Expr` or the plain tree that [analytic](https://ratmath.com/analytic/) and [graphics](https://ratmath.com/graphics/) share, so an expression can be simplified here and then plotted or integrated there.
+
+The same habit carries into solving and calculus: an answer comes with how it was checked.
+
+```js
+import { solve, solveInequality, integrate, limit, taylor } from "@ratmath/symbolic";
+
+String(solve("sqrt(x + 3) = x - 3"));          // x = 6, with x = 1 rejected: it fails in the original equation
+String(solve("2sin(x) = 1"));                  // x = pi/6 + 2*n*pi,  5*pi/6 + 2*n*pi
+String(solveInequality("(x - 1)/(x + 2) <= 0"));   // (-2, 1]
+String(integrate("x*exp(x)"));                 // x*exp(x) - exp(x) + C   (proven: its derivative is the integrand)
+String(limit("(1 + 1/x)^x", "x", "inf").value);    // e
+String(taylor("tan(x)", "x", 0, 5).polynomial);    // x + 1/3*x^3 + 2/15*x^5
+```
+
+Systems, sums and step records work the same way.
+
+```js
+import { solveSystem, sum, explain } from "@ratmath/symbolic";
+
+String(solveSystem(["a*x + y = 1", "x - y = 0"], ["x", "y"]));   // x = 1/(a + 1),  y = 1/(a + 1), provided a + 1 != 0
+String(sum("k^3", "k", 1, "n").value);           // n^2*(n + 1)^2/4, proven by its antidifference
+String(sum("1/(k*(k+1))", "k", 1, "inf").value); // 1
+String(explain.factor("x^4 - 1"));               // each step, and how it was checked
+```
+
+### Four ideas
+
+Equality has three answers. Two expressions are proven equal when they reduce to the same normal form, proven different when a certified evaluation at an exact point separates them, and undecided otherwise. A numerical agreement is never reported as equality. See [Equality](https://ratmath.com/symbolic/equality.html).
+
+Rules know their domains. x2​ is ∣x∣, not x, and log(ab)=loga+logb needs a and b positive. A rule is applied only when its conditions are proven from the assumptions you state; otherwise it is left alone and reported, or applied with the conditions handed back. See [Rules](https://ratmath.com/symbolic/rules.html) and [Assumptions](https://ratmath.com/symbolic/assumptions.html).
+
+Answers are checked before they are returned. A solution is substituted into the original equation, and an extraneous root is reported as rejected. An antiderivative is differentiated and compared with the integrand. A limit is compared with a certified enclosure. See [Solving](https://ratmath.com/symbolic/solving.html), [Antiderivatives](https://ratmath.com/symbolic/antiderivatives.html) and [Limits](https://ratmath.com/symbolic/limits.html).
+
+Rewrites are checked. Each application of a rule is compared at exact test points with certified arithmetic, so a rule that is simply wrong is caught the first time it is used.
+
+### Phases
+
+All five phases from the [library roadmap](https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#9-a-symbolic-algebra-package-ratmathsymbolic). are built.
+
+| Phase | Contents | Status |
+
+| 1 | Expressions, assumptions, rewriting, three-way equality | built |
+
+| 2 | Solving equations and inequalities in one variable | built |
+
+| 3 | Antiderivatives with verification; limits; expansions | built |
+
+| 4 | Systems, trigonometric families, sums | built |
+
+| 5 | Step records for every operation | built |
+
+It builds on Core, [analytic](https://ratmath.com/analytic/) (the expression tree, derivatives, enclosures), [algebraic](https://ratmath.com/algebraic/) (factoring) and [structures](https://ratmath.com/structures/) (polynomials in several variables).
+
+### Try it
+
+```js
+// A classic: is this really 1?
+const lhs = sym("(sqrt(5) + 1)/2 * (sqrt(5) - 1)/2");
+PRINT(lhs.toString(), "=", lhs.expand().toString());
+
+// Three answers to "are these equal?"
+for (const [a, b] of [
+  ["cos(x)^4 - sin(x)^4", "cos(2x)"],
+  ["sqrt(x^2 + 2x + 1)", "x + 1"],
+  ["sqrt(x^2 + 2x + 1)", "abs(x + 1)"],
+  ["exp(x)*exp(-x)", "1"],
+  ["atan(1)", "pi/4"],
+]) PRINT(a, " vs ", b, " → ", equal(a, b).toString());
+
+// With an assumption the second one becomes a proof
+PRINT(equal("sqrt(x^2 + 2x + 1)", "x + 1", { assume: { x: "> -1" } }).toString());
+
+// Solving checks its candidates; integrating checks its answer
+PRINT(solve("sqrt(x + 3) = x - 3").toString());
+PRINT(integrate("x^2*sin(x)").toString());
+PRINT(limit("(1 - cos(x))/x^2", "x", 0).toString());
+
+// Systems and sums, and the steps behind an answer
+PRINT(solveSystem(["x^2 + y^2 = 25", "x + y = 7"]).toString());
+PRINT(sum("k*2^k", "k", 0, "n").toString());
+String(explain.solve("2sin(x)^2 = 1"))
+```
+
+---
+
+Page: https://ratmath.com/symbolic/reference.html
+
+Reference
+
+## Everything in the library
+
+Every export of `@ratmath/symbolic`, with what it takes and what it returns. Anything called `x`, `a` or `b` below is text, an `Expr`, a number or a tree; `options.assume` is an `Assumptions` object or the description `assume` takes.
+
+### Expressions
+
+| Export | What it does |
+
+| sym(x) | An Expr from text, a number, a tree or an Expr. |
+
+| Expr | .tree, .variables, toString(), toTeX(), subs(map), diff(name), evaluate(values, bits), approx(values), same(other), and every operation below as a method: expand factor collect apart simplify normal rewrite equals sign. |
+
+| tree(x) | The plain tree of anything read as an expression. |
+
+| substitute(x, map) | Replace variables by expressions, all at once. Returns a tree. |
+
+| evaluate(x, values, bits) | A certified enclosure (a Core RationalInterval) of the value at exact values of the variables. Throws where undefined. |
+
+| toTeX(x) | TeX for an expression. |
+
+| parse, format, differentiate | Analytic's parser, printer and derivative, on plain trees. |
+
+| num, v, op, call | Builders for tree nodes. |
+
+### Assumptions
+
+| Export | What it does |
+
+| assume(spec) | An Assumptions object from { name: fact }. A fact is a word (positive negative nonnegative nonpositive nonzero integer real), a comparison ("> 2"), an interval ("in (0, 1]"), a Core chain, a [lo, hi] pair, a RationalInterval or a Region; several joined by commas. |
+
+| A.sign(x) | "positive" "negative" "zero" "nonnegative" "nonpositive" "nonzero" or "unknown". |
+
+| A.range(x) | A range certain to contain the expression: { lo, hi, loClosed, hiClosed } with null for an unbounded end. |
+
+| A.proves(condition) | true (proven), false (proven false) or null (undecided) for "u > v", >=,
+| Export | What it does |
+
+| expand(x, options) | The normal form: one fraction, multiplied out, common factors cancelled. Also exported as together and cancel. |
+
+| normal(x, options) | { expr, numerator, denominator, cancelled, kernels }. cancelled lists what was divided out. |
+
+| factor(x, options) | Numerator and denominator factored over the rationals; kernels count as variables. |
+
+| collect(x, name, options) | Grouped by powers of one variable. |
+
+| apart(x, name, options) | Partial fractions over the rationals, for a rational function of one variable. |
+
+| isZero(x, options) | true when the normal form is 0, "nonzero" when it is a nonzero number, otherwise false (nothing proven). |
+
+| simplify(x, options) | The smallest of the normal form, the factored form and the normal form after the provable rules. |
+
+### Rules
+
+| Export | What it does |
+
+| rule(from, to, { when, where, name }) | A rule. Pattern variables end in _. when lists conditions such as "a_ > 0". |
+
+| rewrite(x, rules, options) | { expr, steps, blocked, conditions }. Options: assume, conditional (apply undecided rules and return their conditions), maxSteps, check, tidy. |
+
+| match(pattern, target) | The bindings that make the pattern equal to the target, or null. |
+
+| rules | rules.powers, rules.logs.expand, rules.logs.combine, rules.trig.expand, rules.trig.reduce, rules.hyperbolic. |
+
+| spotCheck(a, b, A, count, bits) | Compare two expressions at exact test points: { agreed, refuted }. |
+
+### Equality
+
+| Export | What it does |
+
+| equal(a, b, options) | A Verdict: verdict is "equal", "different" or "undecided"; method; witness for different; agreedAt for undecided; value is true, false or null. |
+
+### Solving
+
+| Export | What it does |
+
+| solve(equation, name, options) | A Solutions object for "lhs = rhs" (or an expression, meaning = 0) in one variable over the reals. Options: assume, range: [lo, hi] (keep solutions in the range and list the members of periodic families), interval: [a, b] (search for certified sign changes when no method applies). |
+
+| Solutions | solutions, rejected ({ value, reason } for candidates that failed the check), complete, all, set (a RealSet when the solutions fill intervals), conditions, notes, steps, values. Iterable. |
+
+| Solution | value, kind ("exact", "algebraic", "numeric"), verified ("proven", "sign change", "enclosed"), period and member(n) for a family, where, enclosure(bits), approx(). |
+
+| solveInequality(inequality, name, options) | The RealSet where , >= or != holds. Options: assume, range (needed for periodic inequalities). |
+
+| solveSystem(equations, variables, options) | A SystemSolutions object for a list of equations in several unknowns (default: every letter, sorted). Linear systems by Gauss–Jordan with letters allowed in the coefficients; others by substitution and resultants. Option assume. |
+
+| SystemSolutions | variables, kind ("linear" or "nonlinear"), solutions (each { values: { x: Expr, … }, free, verified }; a free unknown is its own value), rejected, complete, conditions, notes, steps. Iterable. |
+
+| RealSet | pieces ({ lo, hi, loClosed, hiClosed }, null for an unbounded end), isEmpty, isAll, contains(q), toRegionText(). |
+
+### Calculus
+
+| Export | What it does |
+
+| integrate(f, name, options) | An Antiderivative: found, result, verified ("proven" or "checked"), checkedAt, steps. With { from, to } also value (exact, or null when F(b) − F(a) is not the integral), enclosure (certified quadrature, for rational ends), agrees, note. Option assume. |
+
+| limit(f, name, at, options) | A Limit: kind ("finite", "inf", "-inf", "none", "numeric", "unknown"), value, method, confirmed, enclosure, reason. at is an expression, "inf" or "-inf"; option side: "left" \| "right". |
+
+| taylor(f, name, about, order) | { polynomial, coefficients, lowest, order, about }: exact coefficients of (x − about)^(lowest + i); lowest is negative at a pole. |
+
+| sum(f, index, from, to, options) | A Sum: value (an Expr, "inf", "-inf" or null), antidifference (proven, or null), method, verified ("proven", "checked" for a table value, or null), diverges, conditions, steps, note. to may be "inf". Option assume. |
+
+| Expr methods | .solve(name, options), .integrate(name, options), .limit(name, at, options), .taylor(name, about, order). |
+
+### Step records
+
+| Export | What it does |
+
+| explain.op(…) | For op one of expand, factor, collect, apart, simplify, rewrite, equal, solve, solveInequality, solveSystem, integrate, limit, taylor, sum: run it with the same arguments and return a Derivation. |
+
+| Derivation | operation, input, result (what the operation returns), steps, omitted (steps that could not be checked and are not shown), toString(), toTeX(). Iterable over its steps. |
+
+| Step | rule, detail, from and to (Exprs, for a step between two expressions), check ("proven", "test points", "by the result"), checkedAt. |
+
+| expr.explain(op, …args) | The same as explain[op](expr, …args). |
+
+### Errors and plan
+
+| Export | What it does |
+
+| SymbolicError | Thrown with a code: domain, division-by-zero, bad-rule, not-polynomial, not-univariate, too-large. |
+
+| plan | The phases still to come: empty, since all five are built. |
+
+### Try it
+
+```js
+// One of each.
+const e = sym("(x^2 - 1)/(x - 1) + sqrt(y^2)");
+PRINT("expr      ", e.toString());
+PRINT("variables ", e.variables.join(", "));
+PRINT("expand    ", e.expand().toString());
+PRINT("  given y ≤ 0:", e.expand({ assume: { y: "nonpositive" } }).toString());
+PRINT("cancelled ", e.normal().cancelled.map(String).join(", "));
+PRINT("kernels   ", e.normal().kernels.map(String).join(", "));
+PRINT("factor    ", factor("x^3*y - x*y^3").toString());
+PRINT("collect   ", collect("(x + y + 1)^2", "y").toString());
+PRINT("apart     ", apart("1/(x^2 - 5x + 6)").toString());
+PRINT("sign      ", assume({ x: "> 1" }).sign("x^3 - x"));
+PRINT("proves    ", assume({ x: "> 1" }).proves("log(x)/x > 0"));
+PRINT("match     ", Object.entries(match("a_^n_", "(x + 1)^3")).map(([k, t]) => `${k} = ${format(t)}`).join(", "));
+PRINT("equal     ", equal("x^3 - x", "x*(x - 1)*(x + 1)").toString());
+PRINT("TeX       ", e.toTeX());
+PRINT("solve     ", solve("x^2 - x - 6 = 0").toString());
+PRINT("inequality", solveInequality("x^2 - x - 6 < 0").toString());
+PRINT("integrate ", integrate("x*cos(x)").toString());
+PRINT("limit     ", limit("sin(3x)/x", "x", 0).toString());
+PRINT("taylor    ", taylor("cos(x)", "x", 0, 6).toString());
+Object.keys(rules)
+```
+
+---
+
+Page: https://ratmath.com/symbolic/explore.html
+
+Explore
+
+## Explore
+
+Type an expression, state what you assume about its letters, and see each form of it. Then put a second expression beside it and ask whether the two are equal, solve an equation or an inequality, solve a system, do the calculus and sum a series, and see the checked steps behind an answer.
+
+Expression
+
+Assume
+
+### Are these equal?
+
+Compare with
+
+### Apply rules
+
+Rule set
+apply undecided rules and list their conditions
+
+### Solve
+
+Equation or inequality
+
+x betweenand(optional; needed to list periodic solutions)
+
+### Calculus
+
+f(x)
+
+Limit and expansion at x =order
+
+### Systems
+
+Equations, separated by semicolons
+
+Unknowns(optional; other letters are parameters)
+
+### Sums
+
+Term in k
+
+k fromto(an expression or inf)
+
+### Steps
+
+Operation
+
+Assumptions are written as `name: fact`, separated by semicolons. A fact is a word (`positive`, `negative`, `nonnegative`, `nonzero`, `integer`), a comparison (`> 2`) or an interval (`in (0, 1]`). See [Assumptions](https://ratmath.com/symbolic/assumptions.html).
+
+### Try it
+
+```js
+// The page above, as code.
+const A = assume({ x: "> -1" });
+const e = sym("sqrt(x^2 + 2x + 1) + (x^2 - 1)/(x - 1)");
+PRINT("expand:  ", e.expand({ assume: A }).toString());
+PRINT("factor:  ", e.factor({ assume: A }).toString());
+PRINT("simplify:", e.simplify({ assume: A }).toString());
+PRINT("equal to 2x + 2?", e.equals("2x + 2", { assume: A }).toString());
+PRINT("without the assumption:", e.equals("2x + 2").toString());
+PRINT("solve:   ", solve("sqrt(x + 3) = x - 3").toString());
+PRINT("integral:", integrate("x*exp(x)").toString());
+PRINT("limit:   ", limit("x*exp(x)", "x", "-inf").toString());
+rewrite("sin(x + y)*cos(x - y)", rules.trig.expand).expr.expand().toString()
+```
+
+---
+
+Page: https://ratmath.com/symbolic/expressions.html
+
+Expressions
+
+## Expressions
+
+An expression is a tree: numbers, variables and constants at the leaves, operations and functions above them. This package uses the same tree as analytic and graphics, so nothing needs converting between them.
+
+### Writing one
+
+`sym(text)` reads calculator notation and returns an `Expr`. Numbers are exact: `0.1` is the fraction 1/10, not a floating-point number.
+
+```js
+import { sym } from "@ratmath/symbolic";
+
+const f = sym("2x^2 + 3sin(x) - 0.5");
+String(f);            // "2*x^2 + 3*sin(x) - 1/2"
+f.variables;          // ["x"]
+f.toTeX();            // "2\\,x^{2} + 3\\,\\sin\\left(x\\right) - \\frac{1}{2}"
+f.tree;               // the plain tree: { type: "op", op: "-", args: [...] }
+```
+
+The grammar is the one the rest of RatMath uses: `+ - * / ^`, parentheses, implicit multiplication after a number or a closing bracket (`2x`, `3(x + 1)`, `2sin(x)`), `^` binding tighter than a leading minus (so `-x^2` is −(x2)), and the functions `sqrt cbrt abs exp log sin cos tan asin acos atan sinh cosh tanh`. `log` and `ln` are both the natural logarithm. `pi` and `e` are the constants.
+
+### The tree
+
+A tree node is one of five plain objects:
+
+```js
+{ type: "num", value: Rational }
+{ type: "var", name: "x" }
+{ type: "const", name: "pi" }            // or "e"
+{ type: "op", op: "+", args: [a, b] }    // + - * / ^ and "neg" with one argument
+{ type: "call", name: "sin", args: [a] }
+```
+
+Every function of this package accepts text, an `Expr` or such a tree, and `expr.tree` hands the tree to analytic's `fn` or graphics' plots. The builders `num`, `v`, `op` and `call` make nodes directly.
+
+### Substituting, differentiating, evaluating
+
+```js
+const g = sym("x^2 + y");
+String(g.subs({ x: "y + 1", y: "x" }));   // "(y + 1)^2 + x"   (both at once)
+String(sym("x^2*sin(x)").diff("x"));      // "2*x*sin(x) + x^2*cos(x)"
+
+const iv = sym("sqrt(2) + pi").evaluate({}, 64);   // a Core RationalInterval certain to hold the value
+sym("x/3").approx({ x: 1 });                       // 0.3333333333333333, the midpoint of such an interval
+```
+
+`evaluate` is certified: the interval it returns has exact rational ends and is guaranteed to contain the true value. It is what the rest of the package uses to tell two expressions apart. It takes exact values for the variables and a number of bits of accuracy, and throws where the expression is undefined.
+
+Mathematically, substitution is composition of functions and the tree is the function's definition; two different trees can define the same function. Deciding when they do is the subject of [Normal forms](https://ratmath.com/symbolic/normal-forms.html) and [Equality](https://ratmath.com/symbolic/equality.html). `a.same(b)` only asks whether the trees are identical.
+
+### Try it
+
+```js
+// Newton's method on a tree: x → x − f(x)/f′(x), with every iterate exact.
+const f = sym("x^3 - 2x - 5");
+const step = sym("x - (F)/(D)").subs({ F: f, D: f.diff("x") });
+PRINT("one step:", step.simplify().toString());
+
+let x = new Rational(2);
+for (let i = 0; i < 4; i++) {
+  // evaluate at an exact point returns an interval of width 0 for a rational function
+  x = step.evaluate({ x }).low;
+  PRINT(`x${i + 1} =`, x.toNumber(), `  (a fraction with ${x.denominator.toString().length} digits below)`);
+}
+PRINT("f(x4) is inside", f.evaluate({ x }, 40).toString());
+
+// the same tree goes to TeX
+f.diff("x").toTeX()
+```
+
+---
+
+Page: https://ratmath.com/symbolic/assumptions.html
+
+Assumptions
+
+## Assumptions
+
+Whether a step of algebra is valid often depends on what the letters stand for. An assumption says it: x is positive, n is an integer, t lies between 0 and 1. From assumptions the library proves signs, and it only uses a rule when the proof is there.
+
+### Stating them
+
+```js
+import { assume } from "@ratmath/symbolic";
+
+const A = assume({
+  x: "positive",            // also negative, nonnegative, nonpositive, nonzero, real
+  n: "integer, >= 1",       // several facts, separated by commas
+  t: "in (0, 1]",           // an interval with open or closed ends
+  u: "> 2",                 // a comparison with an exact number
+  w: "0:!w:5",              // a Core chain: 0 < w ≤ 5
+  s: [0, 10],               // a closed interval as a pair
+});
+```
+
+A Core `RationalInterval` or `Region` is accepted as well, so the same object that describes a domain elsewhere in RatMath can be the assumption here. Every function that takes options accepts `{ assume: … }` with either the object above or the plain description.
+
+### What follows from them
+
+```js
+A.sign("x^2 + x + 1");        // "positive"
+A.sign("log(t)");             // "nonpositive"   (t ≤ 1)
+A.sign("x - u");              // "unknown"
+A.range("t*(1 - t)");         // { lo: 0, hi: 1, loClosed: true, hiClosed: false }: a bound, not the exact range
+A.proves("u^2 > 4");          // true
+A.proves("x < 0");            // false   (proven false)
+A.proves("x > u");            // null    (undecided)
+A.proves("integer(n^2 + 3n)");   // true
+```
+
+`proves` has three answers and only two of them are proofs. `null` means the library could not decide, which is different from the statement being false.
+
+### How a sign is proven
+
+Three methods are tried in turn.
+
+Interval arithmetic with unbounded ends. Each variable has a range such as (0,∞), and the range of an expression is bounded by combining ranges: (0,∞)+[1,2]=(1,∞), a square is ≥0, eu>0, log of something >1 is positive. Open and closed ends are tracked, which is what separates "positive" from "nonnegative". The bounds of exp, log and the others at finite ends are certified enclosures from analytic.
+
+Factoring. Interval arithmetic sees x2−2x+1 as [0,∞)−(−∞,∞)+1, which says nothing. Factored as (x−1)2 it is plainly ≥0.
+
+Counting real roots. A polynomial in one variable that has no real root in the variable's range cannot change sign there. A Sturm sequence counts the roots exactly, so x2−2x+2 is proven positive for all real x, and x2−3x+2 is proven positive for x>2.
+
+None of these is complete: a true inequality can come back `"unknown"`. What is guaranteed is the other direction: an answer other than unknown is a theorem.
+
+### Try it
+
+```js
+const show = (A, c) => PRINT(String(A) || "(no assumptions)", " ⊢ ", c, " : ", A.proves(c));
+
+const none = assume({});
+show(none, "x^2 + 1 > 0");
+show(none, "x^2 - 2x + 1 >= 0");        // by factoring
+show(none, "x^4 - 4x^3 + 6x^2 - 4x + 2 > 0");   // by counting roots: (x − 1)^4 + 1
+show(none, "x > 0");                    // undecided
+
+const A = assume({ x: "positive", y: "positive" });
+show(A, "x*y + sqrt(x) > 0");
+show(A, "x/(x + y) < 1");
+show(A, "exp(-x) < 1");
+show(A, "x - y > 0");                   // undecided: it depends
+
+// AM-GM for two numbers, as a sign: (x + y)^2 − 4xy = (x − y)^2
+PRINT("sign of (x + y)^2 - 4xy:", A.sign("(x + y)^2 - 4*x*y"));
+
+// exact test points that satisfy the assumptions (used to tell expressions apart)
+assume({ n: "integer, >= 1", t: "in (0, 1)" }).samples(["n", "t"], 4).map((p) => `n = ${p.n}, t = ${p.t}`)
+```
+
+---
+
+Page: https://ratmath.com/symbolic/normal-forms.html
+
+Rewriting
+
+## Normal forms: expand, factor, collect
+
+To decide whether two expressions are the same, bring both to a standard shape and compare. For polynomials and their fractions the standard shape is well known. This page describes how the library extends it to roots, exponentials, logarithms and trigonometric functions.
+
+### The operations
+
+```js
+import { expand, factor, collect, apart, normal, simplify } from "@ratmath/symbolic";
+
+String(expand("(x + 1)^3"));                    // "x^3 + 3*x^2 + 3*x + 1"
+String(expand("(x + 1/x)^2"));                  // "(x^4 + 2*x^2 + 1)/x^2"   one fraction, cancelled
+String(factor("x^4 - 1"));                      // "(x + 1)*(x - 1)*(x^2 + 1)"
+String(factor("(x^2 - y^2)/(2x + 2y)"));        // "(x - y)/2"
+String(collect("(a*x + b)^2 + x", "x"));        // "a^2*x^2 + (2*a*b + 1)*x + b^2"
+String(apart("(3x + 5)/(x^2 - 1)"));            // "4/(x - 1) - 1/(x + 1)"   partial fractions
+String(simplify("(exp(2x) - 1)/(exp(x) - 1)")); // "exp(x) + 1"
+```
+
+`expand` (also exported as `together` and `cancel`) gives the normal form itself. `factor` factors its numerator and denominator over the rationals. `simplify` returns the smallest of the normal form, the factored form, and the normal form after the rules your assumptions allow.
+
+### Rational functions of kernels
+
+A rational expression uses only numbers, variables and +,−,×,÷. Every rational expression equals a fraction p/q of polynomials with no common factor, and that fraction is unique once the leading coefficient of q is fixed. So two rational expressions are equal exactly when their reduced fractions are the same. The arithmetic is done by [structures](https://ratmath.com/structures/).
+
+Other expressions contain pieces that are not rational operations: sinx, 2​, ex, logx, ∣x∣, π. The library calls these kernels and treats each as one more variable. The expression sin2x+2sinx+1 is the polynomial s2+2s+1 in the kernel s=sinx, and factors as (s+1)2.
+
+Kernels are not independent, though, and the normal form uses the relations between them that are known exactly:
+
+| Kernel | Relation used | Example |
+
+| k=b1/n | kn=b | sqrt(2)^2 is 2; 1/sqrt(2) is sqrt(2)/2 |
+
+| roots of numbers | split into roots of primes | sqrt(8) + sqrt(2) is 3*sqrt(2); sqrt(2)*sqrt(3) - sqrt(6) is 0 |
+
+| k=∣u∣ | k2=u2, and ∣uv∣=∣u∣∣v∣ | abs(x)^2 is x^2 |
+
+| s=sinu, c=cosu | s2+c2=1; tanu=s/c; exact values at multiples of π/12 | sin(x)^2 + cos(x)^2 is 1 |
+
+| eu | eu+v=euev, eclogw=wc | exp(2x)/exp(x) is exp(x) |
+
+| logu | log(eu)=u; logs of numbers split over primes | log(8) - 3log(2) is 0 |
+
+Each relation holds wherever the expressions are defined, so the conclusion is: if two expressions have the same normal form, they are equal wherever both are defined. The converse is not claimed. arctan1 and π/4 are equal, but no relation above says so, and their normal forms differ.
+
+### Perfect powers under a root
+
+x2​ is ∣x∣, and x2+2x+1​ is ∣x+1∣. The library finds these by a square-free decomposition of what is under the root, and resolves the absolute value when the assumptions decide the sign.
+
+```js
+String(expand("sqrt(x^2 + 2x + 1)"));                                   // "abs(x + 1)"
+String(expand("sqrt(x^2 + 2x + 1)", { assume: { x: "> -1" } }));        // "x + 1"
+String(expand("sqrt(x^2)", { assume: { x: "negative" } }));             // "-x"
+```
+
+### What was cancelled
+
+(x2−1)/(x−1) and x+1 agree everywhere except at x=1, where the first is undefined. Cancelling is still the right thing to do, but it should not be silent. `normal` returns the form together with what was divided out:
+
+```js
+const n = normal("(x^2 - 1)/(x - 1) + 1/y");
+String(n.expr);              // "(x*y + y + 1)/y"
+n.cancelled.map(String);     // ["x - 1"]   the result equals the input only where x − 1 ≠ 0
+n.kernels.map(String);       // []          (no kernels here)
+```
+
+Things with no real value are refused instead of being rewritten: `sqrt(-4)`, `log(-1)`, `1/(x - x)` and `0^0` all throw a `SymbolicError`.
+
+### Try it
+
+```js
+// Kernels are just variables to the polynomial arithmetic.
+PRINT(factor("sin(x)^2 + 2sin(x) + 1").toString());
+PRINT(factor("exp(2x) - 1").toString());
+PRINT(expand("(sqrt(2) + sqrt(3))^4").toString());
+
+// The golden ratio satisfies φ² = φ + 1, and 1/φ = φ − 1.
+const phi = sym("(1 + sqrt(5))/2");
+PRINT("φ² − φ − 1 =", expand(sym("p^2 - p - 1").subs({ p: phi })).toString());
+PRINT("1/φ =", expand(sym("1/p").subs({ p: phi })).toString());
+
+// Exact trigonometric values, and an identity that needs them
+PRINT("sin(π/12) =", expand("sin(pi/12)").toString());
+PRINT("sin(π/12)·cos(π/12) =", expand("sin(pi/12)*cos(pi/12)").toString());
+
+// A fraction that hides a lot of cancelling
+const messy = "(x^3 - 1)/(x - 1) - (x^3 + 1)/(x + 1)";
+const n = normal(messy);
+PRINT(messy, "=", n.expr.toString(), "  where", n.cancelled.map((c) => `${c} ≠ 0`).join(" and "));
+
+apart("(x^2 + 1)/(x^3 - x)").toString()
+```
+
+---
+
+Page: https://ratmath.com/symbolic/rules.html
+
+Rewriting
+
+## Rules that know their domains
+
+Most errors in hand algebra come from using an identity outside the range where it holds. Here a rule carries its conditions, the conditions are proven before the rule is used, and every use is checked.
+
+### A rule
+
+A rule is a pattern, a replacement, and the conditions under which the two are equal. Pattern variables end in an underscore and stand for any subexpression.
+
+```js
+import { rule, rewrite, rules } from "@ratmath/symbolic";
+
+const logProduct = rule("log(a_*b_)", "log(a_) + log(b_)", {
+  when: ["a_ > 0", "b_ > 0"],
+  name: "log of a product",
+});
+```
+
+The condition matters. With a=b=−1 the left side is log1=0 and the right side is undefined; a system that applies the rule regardless will sooner or later prove something false.
+
+### Applying rules
+
+```js
+// proven conditions: the rule is used
+const r = rewrite("log(x^2*y)", rules.logs.expand, { assume: { x: "positive", y: "positive" } });
+String(r.expr);                 // "2*log(x) + log(y)"
+r.steps.map((s) => s.rule);     // ["log of a product", "log of a power"]
+
+// undecided conditions: the rule is not used, and the result says why
+const b = rewrite("log(x*y)", rules.logs.expand);
+String(b.expr);                 // "log(x*y)"
+b.blocked[0].needs;             // ["x > 0", "y > 0"]
+
+// or ask for it anyway, and receive the conditions with the result
+const c = rewrite("log(x*y)", rules.logs.expand, { conditional: true });
+String(c.expr);                 // "log(x) + log(y)"
+c.conditions;                   // ["x > 0", "y > 0"]
+```
+
+A condition that is proven false simply stops the rule. Rules are tried innermost first and repeatedly until none applies (or `maxSteps`, 200 by default, is reached). `+` and `*` match in either order.
+
+### Every use is checked
+
+After a rule is applied, the two sides are evaluated at several exact rational points that satisfy the assumptions, with certified interval arithmetic. If the enclosures of the two sides are disjoint at any point, the rule is not an identity and `rewrite` throws, naming the point. Each step records how many points agreed in `checkedAt`.
+
+```js
+rewrite("sqrt(x^2)", rule("sqrt(a_^2)", "a_"));
+// SymbolicError: the rule "sqrt(a_^2) -> a_" is not an identity:
+//                sqrt(x^2) and x differ at x = -2/3
+```
+
+Agreement at test points is evidence and not a proof, and the library does not present it as one: it is a guard against wrong rules. Proofs of equality come from the [normal form](https://ratmath.com/symbolic/normal-forms.html).
+
+### The rule sets that ship
+
+| Set | Contents |
+
+| rules.powers | a2​=∣a∣; ∣a∣=a for a≥0; ab​=a​b​ for a,b≥0; (ab)c=abc for a>0; (ab)c=acbc for a,b>0; products and powers of exponentials |
+
+| rules.logs.expand | log(ab), log(a/b), log(ab), loga​ taken apart for positive arguments; logea=a; eloga=a for a>0 |
+
+| rules.logs.combine | loga±logb put together (valid wherever the left side is defined) |
+
+| rules.trig.expand | sums, differences, double and triple angles; tan=sin/cos |
+
+| rules.trig.reduce | power reduction: sin2a=(1−cos2a)/2 and its relatives |
+
+| rules.hyperbolic | sinh, cosh, tanh through the exponential |
+
+A rule set is a rule, a list, or an object of lists, nested as deep as you like; pass several as an array. A `where` function on a rule gives a test on the bindings that a condition cannot express.
+
+### Try it
+
+```js
+const report = (r) => {
+  PRINT("→", r.expr.toString());
+  for (const s of r.steps) PRINT(`   ${s.rule}: ${s.from} → ${s.to}   (checked at ${s.checkedAt} points)`);
+  for (const b of r.blocked) PRINT(`   not used: ${b.rule} at ${b.at}, needs ${b.needs.join(" and ")}`);
+  if (r.conditions.length) PRINT("   holds when", r.conditions.join(" and "));
+};
+
+// the same expression under different assumptions
+const e = "log(sqrt(x)*y^3)";
+report(rewrite(e, rules.logs.expand));
+report(rewrite(e, rules.logs.expand, { assume: { x: "positive", y: "positive" } }));
+report(rewrite(e, rules.logs.expand, { conditional: true }));
+
+// trigonometry: write sin(3x) out, starting from the sum rule only
+report(rewrite("sin(x + 2x)", rules.trig.expand));
+
+// your own rule: the binomial square, and a wrong version of it
+const good = rule("(a_ + b_)^2", "a_^2 + 2*a_*b_ + b_^2", { name: "binomial square" });
+report(rewrite("(sin(t) + 1)^2", good));
+try {
+  rewrite("(u + 3)^2", rule("(a_ + b_)^2", "a_^2 + b_^2", { name: "freshman's dream" }));
+} catch (err) {
+  PRINT(err.name + ":", err.message);
+}
+String(good)
+```
+
+---
+
+Page: https://ratmath.com/symbolic/equality.html
+
+Equality
+
+## Equal, different, or undecided
+
+Asking whether two expressions are equal has no general algorithm. The honest reply has three values, and two of them come with a proof.
+
+### The three answers
+
+```js
+import { equal } from "@ratmath/symbolic";
+
+const a = equal("(x + 1)^2", "x^2 + 2x + 1");
+a.verdict;      // "equal"
+a.method;       // "normal form"
+
+const b = equal("sqrt(x^2)", "x");
+b.verdict;      // "different"
+b.witness;      // { point: { x: -2/3 }, left: [0.666…], right: [-0.666…] }   exact point, certified enclosures
+
+const c = equal("atan(1)", "pi/4");
+c.verdict;      // "undecided"
+c.agreedAt;     // 1   test point where the enclosures overlapped, which proves nothing
+c.value;        // null   (true / false / null for the three verdicts)
+```
+
+Equal is a proof by [normal form](https://ratmath.com/symbolic/normal-forms.html): the difference of the two expressions reduces to zero using only relations that hold wherever the expressions are defined. It means equal wherever both sides are defined, under the assumptions given.
+
+Different is a proof by witness: at an exact rational point that satisfies the assumptions, certified interval evaluation of the two sides gives intervals that do not meet. For expressions without variables the precision is raised (to about 4,000 bits) before giving up, so π against 22/7, or 2​ against a decimal, is settled quickly.
+
+Undecided means neither. The normal form does not know the identity and no test point separated the two sides. The library reports how many points agreed, and does not turn that into a claim.
+
+### Why not just compare numerically?
+
+Because agreement to many digits is not equality. The expressions
+
+eπ163​and262537412640768744
+agree to twelve decimal places after the point and are different numbers. With certified arithmetic the difference is found once enough precision is used, and it is a proof. In the other direction, no amount of numerical agreement can prove an identity, so the library does not try.
+
+There is also a theorem behind the third answer. Richardson showed in 1968 that for expressions built from the rationals, π, log2, a variable, sin, exp and ∣⋅∣, no algorithm decides whether an expression is identically zero. A system that always answers yes or no must sometimes be wrong.
+
+### Assumptions change the answer
+
+```js
+String(equal("log(a*b)", "log(a) + log(b)"));
+// "undecided …": they agree wherever both are defined, but the rule is not valid in general
+
+String(equal("log(a*b)", "log(a) + log(b)", { assume: { a: "positive", b: "positive" } }));
+// "equal (normal form, after the rules the assumptions allow)"
+
+String(equal("(a^b)^c", "a^(b*c)", { assume: { a: "positive" } }));   // equal
+```
+
+With assumptions, `equal` first applies the [rules](https://ratmath.com/symbolic/rules.html) whose conditions it can prove (powers, logarithms, angle sums) and then compares normal forms. For hyperbolic functions it also tries writing them through the exponential, which is how coshx+sinhx=ex is proven.
+
+### Simplifying
+
+`simplify` uses the same machinery and returns an expression that is proven equal to its input wherever the input is defined: the smallest of the normal form, the factored form, and the normal form after the provable rules.
+
+```js
+String(simplify("(x^2 - 1)/(x - 1)"));                                          // "x + 1"
+String(simplify("sqrt(a^2*b)", { assume: { a: "positive", b: "positive" } }));  // "a*sqrt(b)"
+String(simplify("sin(x)^4 - cos(x)^4"));                                        // "1 - 2*cos(x)^2"
+```
+
+### Try it
+
+```js
+const ask = (a, b, opts) => PRINT(`${a}  ≟  ${b}${opts ? "   given " + assume(opts.assume) : ""}\n    ${equal(a, b, opts)}`);
+
+// identities a course proves
+ask("tan(x)^2 + 1", "1/cos(x)^2");
+ask("cos(3x)", "4cos(x)^3 - 3cos(x)");
+ask("cosh(2x)", "2cosh(x)^2 - 1");
+ask("(sqrt(3) + sqrt(2))*(sqrt(3) - sqrt(2))", "1");
+
+// "identities" students write
+ask("sqrt(a^2 + b^2)", "a + b");
+ask("(a + b)^2", "a^2 + b^2");
+ask("sin(2x)", "2sin(x)");
+ask("log(x + y)", "log(x) + log(y)", { assume: { x: "positive", y: "positive" } });
+
+// true only with an assumption
+ask("sqrt(x^2)", "x");
+ask("sqrt(x^2)", "x", { assume: { x: "nonnegative" } });
+// equal wherever both sides are defined (the left side needs x ≥ 0)
+ask("sqrt(x)^2", "x");
+
+// close, and different: certified evaluation separates them
+ask("pi", "355/113");
+ask("exp(pi*sqrt(163))", "262537412640768744");
+
+// true, and beyond the normal form: the answer is "undecided", not a guess
+ask("atan(1/2) + atan(1/3)", "pi/4");
+"Ramanujan's constant misses that integer by about " + equal("exp(pi*sqrt(163))", "262537412640768744").witness.left.high.subtract(new Rational(262537412640768744n)).toNumber()
+```
+
+---
+
+Page: https://ratmath.com/symbolic/solving.html
+
+Solving
+
+## Solving equations, and checking the answers
+
+The methods are the ones taught: factor, undo a function, square both sides, substitute. What differs is the last step. Every candidate is put back into the equation as it was written, and the answer says which candidates passed, which failed and why, and whether the list is known to be complete.
+
+### One call
+
+```js
+import { solve } from "@ratmath/symbolic";
+
+const s = solve("sqrt(x + 3) = x - 3");
+String(s);        // x = 6
+                  //   rejected x = 1: the two sides differ there by about 4
+s.solutions;      // [ Solution ]   each with value, kind, verified
+s.rejected;       // [ { value: 1, reason: "the two sides differ there by about 4" } ]
+s.complete;       // true: there are no other real solutions
+s.steps;          // [ { rule: "radicals eliminated", detail: "… leads to x^2 - 7*x + 6 = 0, whose roots are candidates only" } ]
+```
+
+An equation is text with one `=`; an expression alone means "equals zero". The variable defaults to `x`, and any other letters are treated as parameters.
+
+### Why candidates must be checked
+
+Many steps of algebra are not reversible. Squaring both sides of x+3​=x−3 gives x+3=(x−3)2, that is x2−7x+6=0, with roots 1 and 6. But squaring also keeps the solutions of x+3​=−(x−3), and x=1 is one of those. In the same way, multiplying by a denominator can add a root where the denominator is zero, and combining logarithms can add one where an argument is negative.
+
+So the roots of the simplified equation are only candidates. Each is substituted into the original equation. It is accepted as `"proven"` when the difference of the two sides reduces to zero in the [normal form](https://ratmath.com/symbolic/normal-forms.html), and rejected when a certified evaluation shows the two sides apart or one side undefined. A candidate that can be neither proven nor refuted is kept and marked `"enclosed"`: the two sides agree to the precision tried, which is not a proof and is not presented as one.
+
+### What it solves
+
+```js
+String(solve("x^2 - 2x - 1 = 0"));            // x = 1 - sqrt(2),  sqrt(2) + 1
+String(solve("abs(2x - 1) = 5"));             // x = -2,  3
+String(solve("exp(2x) - 3exp(x) + 2 = 0"));   // x = 0,  log(2)
+String(solve("log(x) + log(x - 1) = log(6)"));
+// x = 3
+//   rejected x = -2: a side of the equation is undefined there
+String(solve("x^2 + 1 = 0"));                 // no real solution
+String(solve("(x + 1)^2 = x^2 + 2x + 1"));    // every x where the equation is defined
+String(solve("abs(x) = x"));                  // x in [0, inf)
+```
+
+The solver works over the real numbers. It brings everything to one side, takes the normal form, factors the numerator and solves each factor: linear and quadratic factors by formula, a function of the unknown by undoing it (exponentials, logarithms, roots, powers, absolute values, the trigonometric functions), a polynomial in one such function by substitution. Radicals and absolute values that cannot be undone directly are eliminated with resultants, which is the systematic form of "isolate the root and square".
+
+### Roots with no formula
+
+A polynomial of degree five or more usually has no solution in radicals, and a cubic's formula is rarely what anyone wants. Such roots are returned as named algebraic numbers: exact objects, each known by its polynomial and an isolating interval that can be narrowed as far as you like.
+
+```js
+const c = solve("x^3 - x - 1 = 0");
+String(c);                 // x = alpha1
+                           //   alpha1 ≈ 1.3247179572…: a root of x^3 - x - 1 = 0
+c.solutions[0].kind;       // "algebraic"
+c.solutions[0].verified;   // "proven"
+c.solutions[0].enclosure(60);   // a RationalInterval of width below 2^-60
+c.complete;                // true: Sturm's theorem counts the real roots, so none is missing
+```
+
+Where no method applies at all, as for cosx=x, `solve` says so. Give it an interval and it searches for certified sign changes using [analytic](https://ratmath.com/analytic/); those solutions have kind `"numeric"` and `complete` is false, because a root where the function touches zero without crossing would be missed.
+
+```js
+String(solve("cos(x) = x"));
+// no solution found (the search was not complete)
+String(solve("cos(x) = x", "x", { interval: [0, 2] }));
+// one solution near 0.7390851332, verified by a sign change
+```
+
+### Families of solutions
+
+A trigonometric equation has infinitely many solutions, in families one period apart. The answer gives each family with the whole number n; `member(n)` picks one out, and a `range` lists the members that fall inside it.
+
+```js
+const t = solve("2sin(x) = 1");
+String(t);                      // x = pi/6 + 2*n*pi,  5*pi/6 + 2*n*pi   (n any whole number)
+String(t.solutions[0].member(1));   // 13*pi/6
+String(t.solutions[0].period);      // 2*pi
+
+String(solve("sin(2x) = sin(x)", "x", { range: [0, "2*pi"] }));
+// x = 0,  pi/3,  pi,  5*pi/3,  2*pi
+```
+
+### Parameters
+
+With other letters in the equation, the solution is a formula together with the conditions under which it holds.
+
+```js
+String(solve("a*x + b = c", "x"));
+// x = (c - b)/a
+//   provided a != 0
+String(solve("a*x^2 + b*x + c = 0", "x"));
+// x = (-sqrt(b^2 - 4*a*c) - b)/(2*a),  (sqrt(b^2 - 4*a*c) - b)/(2*a)
+//   provided a != 0 and b^2 - 4*a*c >= 0
+```
+
+Inequalities have [their own page](https://ratmath.com/symbolic/inequalities.html).
+
+### Try it
+
+```js
+// Each equation, what was found, what was thrown out, and whether the list is complete.
+const show = (eq, options) => {
+  const s = solve(eq, "x", options);
+  PRINT(eq);
+  PRINT("   " + String(s).split("\n").join("\n   "));
+  PRINT("   complete:", s.complete, "  verified:", s.solutions.map((q) => q.verified).join(", ") || "-");
+};
+show("sqrt(2x + 3) = x");              // squaring adds x = -1
+show("sqrt(x) + sqrt(x - 5) = 5");     // two roots to remove
+show("abs(x - 1) = 2x + 4");           // one of the two cases fails
+show("log(x) + log(x - 1) = log(6)");
+show("4^x - 5*2^x + 4 = 0");           // a quadratic in 2^x
+show("2cos(x)^2 - cos(x) - 1 = 0", { range: [0, "2*pi"] });
+show("x^5 - x + 1 = 0");               // no formula: a named algebraic number
+
+// the root of the quintic to 30 digits, certified
+const alpha = solve("x^5 - x + 1 = 0").solutions[0];
+const iv = alpha.enclosure(110);
+PRINT("alpha1 lies in an interval of width", iv.high.subtract(iv.low).toNumber());
+iv.low.toDecimal ? iv.low.toDecimal(30) : iv.low.toNumber()
+```
+
+---
+
+Page: https://ratmath.com/symbolic/trig-equations.html
+
+Trigonometric equations
+
+## Every family of solutions
+
+A trigonometric equation has infinitely many solutions. `solve` returns them as families x0​+np, merges families that are really one, and checks every family in the equation as written.
+
+### Using it
+
+```js
+import { solve } from "@ratmath/symbolic";
+
+String(solve("2sin(x) = 1"));             // x = pi/6 + 2*n*pi,  5*pi/6 + 2*n*pi   (n any whole number)
+String(solve("sin(x)*cos(x) = 1/4"));     // x = pi/12 + n*pi,  5*pi/12 + n*pi
+String(solve("sin(3x) = 0"));             // x = n*pi/3
+String(solve("cos(x) + cos(3x) = 0"));    // x = pi/4 + n*pi/2,  pi/2 + n*pi
+
+const r = solve("sin(x) = a", "x");
+String(r);         // x = asin(a) + 2*n*pi,  pi - asin(a) + 2*n*pi, provided abs(a) <= 1
+r.conditions;      // ["abs(a) <= 1"]
+
+const s = solve("2sin(x) = 1").solutions[0];
+String(s.period);       // "2*pi"
+String(s.member(1));    // "13*pi/6"
+```
+
+With `{ range: [lo, hi] }` the families are listed member by member inside the range, as on the [Solving](https://ratmath.com/symbolic/solving.html) page.
+
+### The general solution of the basic equations
+
+Each of the three basic equations has a principal solution from the inverse function and a rule for the others:
+
+sinx=a:x=arcsina+2nπ or π−arcsina+2nπ,cosx=a:x=±arccosa+2nπ,tanx=a:x=arctana+nπ.
+The first two need ∣a∣≤1. When a is a number the library decides that itself; when it is a letter it asks the assumptions, and if they do not settle it the condition `abs(a) <= 1` is returned with the answer. At the exact angles (multiples of π/12) the inverse function is written as that angle, so arcsin21​ appears as π/6.
+
+When the angle is kx+b instead of x, each family is solved for x: the period becomes 2π/∣k∣.
+
+### Reducing to the basic equations
+
+Most equations from a course become one of the basic three after a standard move. The solver tries them in turn:
+
+- One function, polynomially. 2cos2x−3cosx+1=0 is a quadratic in u=cosx: u=1 or u=1/2, then each is inverted.
+
+- Homogeneous in sine and cosine. sinx=cosx, or sin2x−3sinxcosx+2cos2x=0: divide by a power of cosx and solve for tanx.
+
+- Power reduction and double angles. A product or power of sinx and cosx is rewritten as sines and cosines of multiples of x, through sinx=(z−z−1)/2i and cosx=(z+z−1)/2 with z=eix. If one multiple is left, that is an equation in one angle: sinxcosx=41​ becomes 21​sin2x=41​.
+
+- Angle sums. sin2x=cosx is expanded with the double-angle formula and factored: cosx(2sinx−1)=0.
+
+- The half-angle substitution. Anything left that is a polynomial in sinx and cosx becomes a polynomial in t=tan(x/2), through sinx=2t/(1+t2) and cosx=(1−t2)/(1+t2). The substitution misses x=π, which is tried separately.
+
+### Families that are one family
+
+The methods above can return several families with the same period whose starting points are evenly spaced, as sin3x=0 gives 2nπ/3 and π/3+2nπ/3. Those are one family, nπ/3. The library reduces each starting point modulo the period, looks for k of them spaced exactly p/k apart, and proves the spacing with the normal form before merging them. A family written twice (−π/2+2nπ and 3π/2+2nπ) is listed once.
+
+### What the normal form knows
+
+To check a family with a letter in it, the solution is put back and the difference reduced to zero. That needs a few identities, which the [normal form](https://ratmath.com/symbolic/normal-forms.html) now applies wherever the left side is defined:
+
+sin(arcsinw)=w,cos(arcsinw)=1−w2​,sin(arctanw)=1+w2​w​,sin(w+π)=−sinw,cos(w+2π​)=−sinw.
+The square roots are right, not just up to sign, because arcsin and arctan take values in [−π/2,π/2], where the cosine is not negative; arccos takes values in [0,π], where the sine is not negative.
+
+### Try it
+
+```js
+// Equations from a trigonometry course, with the method each one used.
+for (const eq of [
+  "2cos(x)^2 - 3cos(x) + 1 = 0",
+  "sin(x)^2 = 3cos(x)^2",
+  "sin(x)*cos(x) = 1/4",
+  "cos(x)^2 - sin(x)^2 = 1/2",
+  "sin(2x) = cos(x)",
+  "sin(x) + sqrt(3)*cos(x) = 1",
+  "tan(x) = sqrt(3)",
+  "sin(4x) = 0",
+]) {
+  const r = solve(eq);
+  PRINT(eq.padEnd(30), String(r).split("\n")[0]);
+  PRINT("".padEnd(30), "by:", r.steps.map((s) => s.rule).filter((s) => s !== "linear").slice(0, 3).join(", "));
+}
+
+// A letter: the condition comes back
+String(solve("cos(2x) = b", "x"))
+```
+
+---
+
+Page: https://ratmath.com/symbolic/systems.html
+
+Systems
+
+## Systems of equations
+
+`solveSystem` solves several equations in several unknowns: linear systems by elimination, letters and all, and nonlinear ones by substitution or by eliminating an unknown with the resultant. Every solution is put back into every equation.
+
+### Using it
+
+```js
+import { solveSystem } from "@ratmath/symbolic";
+
+String(solveSystem(["x + y = 3", "x - y = 1"]));
+// x = 2,  y = 1
+
+String(solveSystem(["2x + 3y - z = 1", "x - y + 2z = 4", "3x + y + z = 5"]));
+// x = 6/5,  y = 0,  z = 7/5
+
+String(solveSystem(["a*x + y = 1", "x - y = 0"], ["x", "y"]));
+// x = 1/(a + 1),  y = 1/(a + 1)
+//   provided a + 1 != 0
+
+String(solveSystem(["x + y + z = 1", "x - y = 0"]));
+// x = 1/2 - z/2,  y = 1/2 - z/2,  z = z   (z free)
+
+String(solveSystem(["x + y = 1", "2x + 2y = 3"]));
+// no solution
+
+String(solveSystem(["x^2 + y^2 = 25", "x + y = 7"]));
+// x = 3,  y = 4
+// x = 4,  y = 3
+```
+
+The unknowns default to every letter in the equations, in alphabetical order; pass them as the second argument when some letters are parameters. The result has `solutions` (each with `values`, `free` and `verified`), `complete`, `conditions`, `notes` and `steps`.
+
+### Linear systems: Gauss–Jordan with letters
+
+When every equation is linear in the unknowns, the system is the matrix equation Ax=b and is reduced to reduced row echelon form. The entries are expressions, not just numbers, and each one is kept in [normal form](https://ratmath.com/symbolic/normal-forms.html) as the rows are combined. A pivot must not be zero:
+
+- a number that is not zero is used first;
+
+- otherwise an entry with letters that is not proven zero is used, and the condition that it is not zero is returned, unless the assumptions already prove it.
+
+A row that ends as 0=b decides the rest. If b is a nonzero number the system is inconsistent and has no solution. If b has letters, the equations agree only when b=0, and that is returned as a condition. Columns without a pivot are free: the unknowns there can take any value, and the others are written in terms of them. The number of free unknowns is the number of unknowns minus the rank.
+
+The linear algebra library, [linalg](https://ratmath.com/linalg/), solves systems with number entries much faster; this one is for coefficients with letters in them, which is where a first course spends its time (for which a does the system have one solution, none, infinitely many?).
+
+### Nonlinear systems
+
+Substitution. If some equation contains an unknown only to the first power, ax+b=0 with a,b free of x, it is solved for x=−b/a and that is put into the other equations, leaving one unknown fewer. A number coefficient is preferred. When a contains other unknowns, the case a=0 is solved separately, so that nothing is lost by dividing.
+
+Elimination. When every equation is a polynomial, the resultant of two of them with respect to an unknown y is a polynomial without y that vanishes wherever both do. Eliminating one unknown at a time leaves one equation in one unknown, which [`solve`](https://ratmath.com/symbolic/solving.html) handles; each value is then carried back and the next unknown found. A resultant can have roots that belong to no solution, which is one reason every candidate is checked at the end.
+
+The check. Each candidate is substituted into every equation as written, and the difference of the two sides must reduce to 0 in normal form. A candidate that fails is dropped; one that cannot be decided is left out and noted, and the answer is marked incomplete.
+
+What is not handled: values with no closed form (a root of a quintic) are noted and not followed, and a curve of solutions (two equations with a common factor) is reported as incomplete.
+
+### Try it
+
+```js
+// For which a does this system have one solution, none, or infinitely many?
+const sys = (a) => solveSystem([`x + ${a}*y = 1`, `${a}*x + y = 1`], ["x", "y"]);
+PRINT("general a:", String(solveSystem(["x + a*y = 1", "a*x + y = 1"], ["x", "y"])));
+for (const a of ["-1", "1", "2"]) PRINT(`a = ${a}:`.padEnd(8), String(sys(a)).replace(/\n/g, " |"));
+
+// A circle and a line, a circle and a parabola, a hyperbola and a circle
+for (const eqs of [
+  ["x^2 + y^2 = 25", "y = x + 1"],
+  ["x^2 + y^2 = 1", "y = x^2 - 1"],
+  ["x*y = 1", "x^2 + y^2 = 3"],
+]) PRINT(eqs.join(",  "), "\n   ", String(solveSystem(eqs)).replace(/\n/g, "\n    "));
+
+// Three unknowns
+solveSystem(["x + y + z = 6", "x*y = 2", "x - y = 1"]).toString()
+```
+
+---
+
+Page: https://ratmath.com/symbolic/inequalities.html
+
+Inequalities
+
+## Inequalities: the set where it holds
+
+The solution of an inequality is a set of numbers, usually a few intervals. `solveInequality` finds the points where the answer can change, tests one point in each piece between them, and returns the set with its ends exact.
+
+### Using it
+
+```js
+import { solveInequality } from "@ratmath/symbolic";
+
+const s = solveInequality("(x - 1)/(x + 2) <= 0");
+String(s);             // (-2, 1]
+s.pieces;              // [ { lo: -2, hi: 1, loClosed: false, hiClosed: true } ]
+s.contains(0);         // true
+s.contains(-2);        // false: the quotient is undefined there
+s.toRegionText();      // "-2:!x:1"   Core's region notation
+
+String(solveInequality("x^2 > 2"));          // (-inf, -sqrt(2)) U (sqrt(2), inf)
+String(solveInequality("abs(x - 3) < 2"));   // (1, 5)
+String(solveInequality("x^3 - x >= 0"));     // [-1, 0] U [1, inf)
+String(solveInequality("1/x < 1"));          // (-inf, 0) U (1, inf)
+String(solveInequality("sqrt(x) < x - 2"));  // (4, inf)
+String(solveInequality("x^2 < -1"));         // no real number
+```
+
+The comparison is one of `<`, `<=`, `>`, `>=` and `!=`.
+
+### The method of critical points
+
+Write the inequality as h(x) with h=f−g. A function built from the usual pieces can change sign only where it is zero or where it stops being continuous or defined. Those are the critical points: the solutions of h(x)=0, the zeros of every denominator, and the ends of the domains of roots and logarithms. Between two neighbouring critical points h keeps one sign, so one test point decides the whole piece.
+
+For x+2x−1​≤0 the critical points are −2 (denominator) and 1 (zero). The three pieces give
+
+| Piece | Test point | Value | Kept? |
+
+| x | −3 | 4 | no |
+
+| −2 | 0 | −1/2 | yes |
+
+| x>1 | 2 | 1/4 | no |
+
+and then each critical point is tested on its own: x=1 gives 0, which satisfies ≤, and x=−2 is not in the domain. The answer is (−2,1].
+
+This is why a common shortcut fails. Multiplying 1/x by x to get 1 loses the negative numbers, because multiplying by a negative quantity reverses an inequality. The method of critical points never multiplies by anything whose sign is unknown.
+
+### Where the proof comes from
+
+The critical points come from [`solve`](https://ratmath.com/symbolic/solving.html), and the method is only as good as that list: a missed zero would merge two pieces that should be separate. So `solveInequality` refuses to answer when the equation's solution is not known to be complete. Signs at test points are decided by certified evaluation at exact rational points, so a sign is never read off a rounded number.
+
+### Periodic inequalities
+
+For an inequality with infinitely many pieces, give a range.
+
+```js
+String(solveInequality("sin(x) > 1/2", "x", { range: [0, "2*pi"] }));   // (pi/6, 5*pi/6)
+solveInequality("sin(x) > 1/2");
+// refuses: the inequality is periodic: give a bounded range for x, such as { range: [0, "2*pi"] }
+```
+
+### Try it
+
+```js
+// The set for each inequality, with a spot check at exact points.
+const show = (ineq, options) => {
+  const s = solveInequality(ineq, "x", options);
+  PRINT(ineq.padEnd(30), String(s));
+  return s;
+};
+show("(x - 1)/(x + 2) <= 0");
+show("x^2 - 5x + 6 > 0");
+show("(x + 1)*(x - 2)^2*(x - 4) < 0");   // a double root does not change the sign
+show("abs(2x + 1) >= 3");
+show("2/(x - 1) >= 1");
+show("exp(x) < 5");
+show("log(x) > 1");
+show("cos(x) <= 0", { range: [0, "2*pi"] });
+
+// membership is exact
+const s = show("x^2 > 2");
+PRINT("3/2 in the set?", s.contains(new Rational(3, 2)));   // (3/2)^2 = 9/4 > 2
+PRINT("7/5 in the set?", s.contains(new Rational(7, 5)));   // (7/5)^2 = 49/25 < 2
+s.pieces.length + " pieces"
+```
+
+---
+
+Page: https://ratmath.com/symbolic/antiderivatives.html
+
+Antiderivatives
+
+## Antiderivatives that have been checked
+
+Finding an antiderivative is a search; checking one is a calculation. `integrate` searches with the methods of a calculus course, then differentiates what it found and compares the result with the integrand. Nothing is returned that has not passed that comparison.
+
+### Using it
+
+```js
+import { integrate } from "@ratmath/symbolic";
+
+const r = integrate("x*exp(x)");
+String(r);        // x*exp(x) - exp(x) + C   (proven: its derivative is the integrand)
+r.result;         // the Expr x*exp(x) - exp(x)
+r.verified;       // "proven"
+r.steps;          // [ { rule: "by parts", detail: "u = x, dv = exp(x) dx: …" }, { rule: "table", … } ]
+
+String(integrate("1/(x^2 - 1)").result);       // log(abs(-1 + x))/2 - log(abs(1 + x))/2
+String(integrate("sin(x)^2").result);          // x/2 - sin(2*x)/4
+String(integrate("x/sqrt(x^2 + 1)").result);   // sqrt(x^2 + 1)
+String(integrate("1/(x^2 + 1)^2").result);     // x/(2*x^2 + 2) + atan(x)/2
+
+integrate("exp(x^2)").found;                   // false: nothing is guessed
+```
+
+### Proven and checked
+
+If F is offered as an antiderivative of f, then F′=f can be tested by [`equal`](https://ratmath.com/symbolic/equality.html), which has three answers. They become:
+
+| equal(F′, f) | What integrate does |
+
+| equal | Returns F with verified: "proven". The normal form shows the derivative is the integrand. |
+
+| undecided | Returns F with verified: "checked" if the two agreed at every exact test point (certified evaluation), and says how many. This happens when the identity needed is beyond the normal form. |
+
+| different | Throws the candidate away and reports that nothing was found. |
+
+The search can therefore be adventurous without being dangerous: a mistake in a method cannot reach you as an answer.
+
+### The methods
+
+Linearity and the table. Sums and constant multiples are taken apart, and single functions of a linear inside ax+b are looked up: powers, eu, sinu, logu, arctanu and so on, each divided by a.
+
+Partial fractions. A rational function is split by [algebraic](https://ratmath.com/algebraic/) into a polynomial plus terms (x−r)kA​ and (x2+px+q)kBx+C​. The first kind integrate to logarithms and powers. For the second, the numerator is split into a multiple of the derivative of the quadratic, which gives a logarithm or a power, and a constant, which gives an arctangent through the reduction formula
+
+∫qkdx​=(k−1)Dqk−1q′​+(k−1)D2a(2k−3)​∫qk−1dx​,q=ax2+bx+c,D=4ac−b2.
+Powers of sine and cosine. A product such as sin3xcos2x or cos3xsin2x is rewritten as a sum of sines and cosines of multiple angles, using cosAcosB=21​(cos(A−B)+cos(A+B)) and its companions, and then integrated term by term.
+
+Substitution. Each subexpression g(x) is tried as u: if the integrand divided by g′(x) can be written with u alone, the problem becomes ∫h(u)du. For a square root of a linear expression the substitution is turned around, x=(u2−b)/a, which removes the root.
+
+Integration by parts. ∫udv=uv−∫vdu, with u chosen as a logarithm or inverse function first and a polynomial second. The product eaxsinbx, where parts leads back to the start, is solved for directly.
+
+Square roots of quadratics. ax2+bx+c​ and its reciprocal use the standard forms that a trigonometric substitution produces.
+
+```js
+const r = integrate("x*sqrt(x + 1)");
+r.steps.map((s) => `${s.rule}: ${s.detail}`);
+// substitution: u = sqrt(x + 1), so x = u^2 - 1 and dx = 2*u du: the integrand becomes 2*u^4 - 2*u^2
+// power rule: u^4
+// power rule: u^2
+```
+
+These are methods, not a decision procedure. Some integrands have no elementary antiderivative at all (ex2, sinx/x), and some that do are out of reach here. In both cases `found` is false.
+
+### The absolute value in the logarithm
+
+∫dx/x is log∣x∣, which is correct on each side of zero separately. The result shows `log(abs(x))` unless the [assumptions](https://ratmath.com/symbolic/assumptions.html) prove the inside positive.
+
+```js
+String(integrate("1/x").result);                                  // log(abs(x))
+String(integrate("1/x", "x", { assume: { x: "positive" } }).result);   // log(x)
+```
+
+### Definite integrals
+
+With `from` and `to` the fundamental theorem gives F(b)−F(a), but only when the integrand is continuous between the ends. That condition is the one students forget, so it is checked: the integrand is integrated by certified quadrature from [analytic](https://ratmath.com/analytic/), and the exact value must lie in the certified interval.
+
+```js
+const d = integrate("1/(x^2 + 1)", "x", { from: 0, to: 1 });
+String(d.value);      // pi/4
+d.enclosure;          // { low: 0.78539816339710…, high: 0.78539816339779… }   exact rationals
+d.agrees;             // true
+
+const bad = integrate("1/x^2", "x", { from: -1, to: 1 });
+bad.value;            // null
+bad.note;             // "the integrand could not be bounded on the interval (it may be undefined or unbounded inside), so F(b) − F(a) is not offered as the integral"
+```
+
+Without that check the formula gives [−1/x]−11​=−2 for the integral of a positive function.
+
+### Try it
+
+```js
+// What was found, how it was verified, and by which methods.
+const show = (f) => {
+  const r = integrate(f);
+  PRINT("∫ " + f + " dx");
+  PRINT("   " + (r.found ? `${r.result} + C   [${r.verified}]` : "nothing found by these methods"));
+  if (r.found) PRINT("   " + [...new Set(r.steps.map((s) => s.rule))].join(", "));
+};
+show("x^2*exp(-x)");
+show("1/(x^3 + 1)");
+show("log(x)^2");
+show("sin(x)^3*cos(x)^2");
+show("exp(2x)*cos(3x)");
+show("x*atan(x)");
+show("sqrt(1 - x^2)");
+show("exp(sqrt(x))");
+show("sin(x)/x");
+
+// the area of a quarter circle of radius 1, exactly and by certified quadrature
+const q = integrate("sqrt(1 - x^2)", "x", { from: 0, to: new Rational(1, 2) });
+PRINT("∫ from 0 to 1/2 of sqrt(1 - x^2) =", String(q.value));
+PRINT("certified enclosure:", q.enclosure.low.toNumber(), "to", q.enclosure.high.toNumber(), " agrees:", q.agrees);
+integrate("1/x^2", "x", { from: -1, to: 1 }).note
+```
+
+---
+
+Page: https://ratmath.com/symbolic/limits.html
+
+Limits
+
+## Limits in closed form
+
+`limit` gives the exact value of a limit where the standard methods find one, says when the two sides disagree, and compares its answer with the certified limit from analytic.
+
+### Using it
+
+```js
+import { limit } from "@ratmath/symbolic";
+
+const r = limit("(x^2 - 1)/(x - 1)", "x", 1);
+String(r);          // 2   (x -> 1; cancel, then substitute; confirmed by certified evaluation)
+r.kind;             // "finite"
+String(r.value);    // "2"
+r.method;           // "cancel, then substitute"
+r.confirmed;        // true
+
+String(limit("sin(x)/x", "x", 0).value);                  // 1
+String(limit("(1 - cos(x))/x^2", "x", 0).value);          // 1/2
+String(limit("(2x^2 + 1)/(x^2 - 3)", "x", "inf").value);  // 2
+String(limit("sqrt(x^2 + x) - x", "x", "inf").value);     // 1/2
+String(limit("(1 + 1/x)^x", "x", "inf").value);           // e
+String(limit("sin(a*x)/x", "x", 0).value);                // a
+```
+
+The point is an expression, or `"inf"` or `"-inf"`. The option `{ side: "left" }` or `{ side: "right" }` asks for a one-sided limit.
+
+### The kinds of answer
+
+| kind | Meaning |
+
+| "finite" | The limit is value, an exact expression. |
+
+| "inf", "-inf" | The expression grows without bound, with that sign. |
+
+| "none" | The one-sided limits differ; reason gives both. |
+
+| "numeric" | No closed form was found, but analytic certified an enclosure of the limit (enclosure). |
+
+| "unknown" | Nothing was found. sinx at infinity is an example: it has no limit, and the library does not claim to prove that. |
+
+```js
+String(limit("1/x", "x", 0));        // no limit: -inf from the left, inf from the right
+String(limit("1/x^2", "x", 0));      // inf
+String(limit("abs(x)/x", "x", 0));   // no limit: -1 from the left, 1 from the right
+String(limit("abs(x)/x", "x", 0, { side: "left" }).value);   // -1
+```
+
+### How a limit is found
+
+Cancel, then substitute. The expression is put in [normal form](https://ratmath.com/symbolic/normal-forms.html), which cancels common factors: (x2−1)/(x−1) becomes x+1. If the result is defined near the point on the side in question, its value there is the limit, by continuity.
+
+Leading terms. When numerator and denominator both vanish (or the denominator alone does), each is expanded about the point:
+
+D(x)N(x)​=dq​(x−a)q+⋯np​(x−a)p+⋯​.
+If p>q the limit is 0; if p=q it is np​/dq​; if p the quotient is unbounded, with a sign fixed by the signs of np​, dq​, the side, and whether q−p is even. This is l'Hôpital's rule applied as many times as needed, done in one step: differentiating p times is exactly reading off the first nonzero coefficient. The coefficients come from [`taylor`](https://ratmath.com/symbolic/expansions.html) and are exact.
+
+At infinity. Put x=1/t and let t→0 from the right. Square roots are tidied using t>0, so x2+x​−x becomes (1+t​−1)/t, whose leading terms give 1/2.
+
+Powers with the variable in the exponent. For fg the limit of glogf is found first, and the answer is its exponential. That is how (1+1/x)x→e.
+
+### The cross-check
+
+When the expression has no other letters, [analytic](https://ratmath.com/analytic/) can often certify an interval that contains the limit, by a different argument from the one used here. If the closed form lies in that interval, `confirmed` is true. If it lies outside, the closed form is dropped and the certified interval is returned instead, as a `"numeric"` answer.
+
+### Try it
+
+```js
+// A page of limits from a first course.
+const show = (f, at, options) => PRINT(`lim ${f}  as x -> ${at}${options ? " from the " + options.side : ""}\n    ${limit(f, "x", at, options)}`);
+show("(x^3 - 8)/(x - 2)", 2);
+show("(sqrt(x + 1) - 1)/x", 0);
+show("(exp(x) - 1 - x)/x^2", 0);
+show("tan(x)/x", 0);
+show("x*log(x)", 0, { side: "right" });
+show("x^x", 0, { side: "right" });
+show("(3x^3 - x)/(2x^3 + 5)", "inf");
+show("(1 + 2/x)^(3x)", "inf");
+show("atan(x)", "-inf");
+show("exp(1/x)", 0, { side: "left" });
+show("exp(1/x)", 0, { side: "right" });
+show("1/(x - 1)", 1);
+show("sin(x)", "inf");
+
+// the derivative of sin at 0, from the definition
+String(limit("(sin(0 + h) - sin(0))/h", "h", 0).value)
+```
+
+---
+
+Page: https://ratmath.com/symbolic/expansions.html
+
+Expansions
+
+## Taylor and Laurent expansions
+
+`taylor` gives the polynomial that matches a function and its derivatives at a point, with every coefficient exact. At a pole it gives the expansion with negative powers.
+
+### Using it
+
+```js
+import { taylor } from "@ratmath/symbolic";
+
+const t = taylor("exp(x)", "x", 0, 4);       // expression, variable, point, highest power
+String(t.polynomial);    // 1 + x + 1/2*x^2 + 1/6*x^3 + 1/24*x^4
+t.coefficients;          // [1, 1, 1/2, 1/6, 1/24]   as expressions
+t.lowest;                // 0: the power the first coefficient belongs to
+
+String(taylor("tan(x)", "x", 0, 7).polynomial);   // x + 1/3*x^3 + 2/15*x^5 + 17/315*x^7
+String(taylor("log(x)", "x", 1, 3).polynomial);   // x - 1 - 1/2*(x - 1)^2 + 1/3*(x - 1)^3
+String(taylor("sqrt(1 + x)", "x", 0, 3).polynomial);   // 1 + 1/2*x - 1/8*x^2 + 1/16*x^3
+String(taylor("exp(a*x)", "x", 0, 2).polynomial);      // 1 + a*x + a^2/2*x^2
+```
+
+### The Taylor polynomial
+
+If f has n derivatives at a, its Taylor polynomial of order n there is
+
+Tn​(x)=k=0∑n​k!f(k)(a)​(x−a)k.
+It is the only polynomial of degree at most n whose value and first n derivatives at a agree with those of f. The coefficients here are found exactly that way: the expression is differentiated symbolically k times, the point is substituted, and the result is put in normal form. No rounding is involved, so 17/315 is 17/315.
+
+What the polynomial does not tell you is how close it is to f away from a. That is the business of the remainder, f(x)−Tn​(x)=(n+1)!f(n+1)(ξ)​(x−a)n+1 for some ξ between a and x. For a certified bound on a function over an interval, use the Taylor models in [analytic](https://ratmath.com/analytic/), which carry the remainder with them.
+
+### At a pole
+
+Where the function is a quotient whose denominator vanishes at the point, the two expansions are divided as power series. If the denominator starts at (x−a)q, the quotient starts at (x−a)−q or later; that is a Laurent expansion, and `lowest` is negative.
+
+```js
+const l = taylor("1/(x*(1 - x))", "x", 0, 2);
+String(l.polynomial);   // x^-1 + 1 + x + x^2
+l.lowest;               // -1
+
+String(taylor("1/sin(x)", "x", 0, 3).polynomial);   // x^-1 + 1/6*x + 7/360*x^3
+```
+
+The coefficient of (x−a)−1 is the residue, the number that the integral of the function around the pole depends on.
+
+### Where there is no expansion
+
+x​ has no Taylor polynomial at 0 beyond order zero, because its derivative is unbounded there, and logx has none at all. `taylor` refuses in those cases and says which point is the trouble.
+
+```js
+taylor("sqrt(x)", "x", 0, 2);
+// refuses: sqrt(x) cannot be expanded at x = 0: a derivative is undefined there
+```
+
+Expansions are also the engine of [`limit`](https://ratmath.com/symbolic/limits.html): the leading terms of numerator and denominator decide a limit of the form 0/0.
+
+### Try it
+
+```js
+// How good is each Taylor polynomial of sin at x = 1? Exact polynomial, certified comparison.
+const x0 = new Rational(1);
+const exact = evaluate("sin(1)", {}, 80);
+for (const n of [1, 3, 5, 7, 9]) {
+  const T = taylor("sin(x)", "x", 0, n).polynomial;
+  const value = T.evaluate({ x: x0 }, 80).low;   // a polynomial at a rational point: exact
+  const error = exact.low.subtract(value).abs().toNumber();
+  PRINT(`order ${n}:`.padEnd(10), String(T).padEnd(52), "error at 1 ≈", error.toExponential(2));
+}
+
+// Bernoulli numbers from the expansion of x/(exp(x) - 1): the coefficient of x^k is B_k/k!
+const b = taylor("x/(exp(x) - 1)", "x", 0, 8);
+let fact = 1;
+const B = b.coefficients.map((c, k) => {
+  if (k > 0) fact *= k;
+  return String(c.tree.value.multiply(new Rational(fact)));   // each coefficient is an exact number
+});
+PRINT("Bernoulli numbers B0..B8:", B.join(", "));
+
+// a residue
+const l = taylor("exp(x)/x^3", "x", 0, 1);
+"residue of exp(x)/x^3 at 0: " + l.coefficients[-1 - l.lowest]
+```
+
+---
+
+Page: https://ratmath.com/symbolic/sums.html
+
+Sums
+
+## Sums in closed form
+
+`sum` finds ∑k=ab​f(k) in closed form by the methods of the course: sums of powers, geometric sums, telescoping. Each answer comes from an antidifference that is proven before it is used.
+
+### Using it
+
+```js
+import { sum } from "@ratmath/symbolic";
+
+String(sum("k", "k", 1, "n").value);              // n*(n + 1)/2
+String(sum("k^3", "k", 1, "n").value);            // n^2*(n + 1)^2/4
+String(sum("k*2^k", "k", 0, "n").value);          // 2*(n*2^n - 2^n + 1)
+String(sum("r^k", "k", 0, "n - 1").value);        // (r^n - 1)/(r - 1), provided r != 1
+String(sum("1/(k*(k+1))", "k", 1, "n").value);    // n/(n + 1)
+
+String(sum("1/(k*(k+2))", "k", 1, "inf").value);  // 3/4
+String(sum("k/2^k", "k", 1, "inf").value);        // 2
+String(sum("1/k^2", "k", 1, "inf"));              // = pi^2/6   (known value (Basel problem (Euler)); checked)
+sum("1/k", "k", 1, "inf").diverges;               // true
+
+const s = sum("k^2", "k", 1, "n");
+String(s.antidifference);    // k^3/3 - k^2/2 + k/6   — proven: F(k + 1) − F(k) = k^2
+s.verified;                  // "proven"
+```
+
+The arguments are the term, the index, and the two ends; an end may be an expression in other letters or `"inf"`. The result has `value` (an `Expr`, `"inf"`, `"-inf"` or `null`), `antidifference`, `method`, `verified`, `diverges`, `conditions` and `steps`.
+
+### Antidifferences
+
+Summing is to differences what integrating is to derivatives. If F(k+1)−F(k)=f(k), the sum telescopes:
+
+k=a∑b​f(k)=k=a∑b​(F(k+1)−F(k))=F(b+1)−F(a).
+So the work is finding F, and the check is easy: the normal form of F(k+1)−F(k)−f(k) must be 0. Every closed form returned has passed that check (`verified: "proven"`). When the ends are whole numbers, the terms are also added up one by one and compared with the closed form.
+
+### The methods
+
+Sums of powers. For each power there is a polynomial Fj​ with Fj​(k+1)−Fj​(k)=kj and Fj​(0)=0. Expanding (k+1)j+1−kj+1 by the binomial theorem gives them one after another (Faulhaber's formulas):
+
+Fj​(k)=j+11​(kj+1−i<j∑​(ij+1​)Fi​(k)).
+A polynomial term, with numbers or letters as coefficients, is a combination of these.
+
+A polynomial times a power. For p(k)rk with r=1, look for F=q(k)rk with q a polynomial of the same degree. The condition F(k+1)−F(k)=p(k)rk is
+
+rq(k+1)−q(k)=p(k),
+a triangular system for the coefficients of q, solved from the top. Powers can be written as 2k+1, (1/3)k or e2k; the ratio r may be a letter, and then r=1 is returned as a condition.
+
+Telescoping. A rational function of k is split into partial fractions. Two terms c/(k+b) and c′/(k+b+j) whose poles are a whole number j apart nearly cancel in the sum, because
+
+k+b+j1​=k+b1​−Δ(−i=0∑j−1​k+b+i1​).
+When the coefficients of each such group add up to zero, the group has a rational antidifference. When they do not, as for ∑1/k, the partial sums are not a rational function of the end (they are the harmonic numbers), and the library says so.
+
+### Infinite sums
+
+∑k=a∞​f(k) is the limit of F(n+1)−F(a). A polynomial times rn tends to 0 when ∣r∣, and a telescoping remainder ∑c/(n+b+i) tends to 0; otherwise [`limit`](https://ratmath.com/symbolic/limits.html) is asked. Divergence is proven when the terms do not tend to 0, or, for a rational term of size about 1/k, by comparison with the harmonic series.
+
+A few famous sums have no antidifference at all. They are in a short table: ∑1/k2=π2/6, ∑1/k4=π4/90, ∑1/k6=π6/945, ∑(−1)k+1/k=log2, ∑(−1)k/(2k+1)=π/4, ∑(−1)k+1/k2=π2/12 and ∑1/(2k−1)2=π2/8, and their multiples and shifts. A value from the table is not proven here; it is checked: the exact partial sum to 400 terms must lie within a proven bound on the tail (for ∑1/k2, the tail after N is less than 1/N; for an alternating series, less than the first term left out).
+
+### Try it
+
+```js
+// Sums of powers, side by side with the direct sum for n = 10
+for (const j of [1, 2, 3, 4, 5]) {
+  const s = sum(`k^${j}`, "k", 1, "n");
+  let direct = 0n;
+  for (let k = 1n; k <= 10n; k++) direct += k ** BigInt(j);
+  PRINT(`sum k^${j} =`, String(s.value).padEnd(40), "at n = 10:", String(s.value.subs({ n: 10 }).expand()), "direct:", String(direct));
+}
+
+// Geometric and telescoping, finite and infinite
+for (const [f, a, b] of [["3*(2/3)^k", 0, "inf"], ["k^2/2^k", 1, "inf"], ["1/(k^2 + 3k + 2)", 0, "n"], ["1/(4k^2 - 1)", 1, "inf"], ["(2k + 1)/(k^2*(k + 1)^2)", 1, "inf"]]) PRINT(String(sum(f, "k", a, b)));
+
+// Famous values and divergent sums
+for (const [f, a] of [["1/k^4", 1], ["(-1)^(k+1)/k", 1], ["1/(2k-1)^2", 1], ["1/(2k + 1)", 0], ["(5/4)^k", 0]]) PRINT(String(sum(f, "k", a, "inf")));
+
+sum("k*r^k", "k", 0, "inf").toString()
+```
+
+---
+
+Page: https://ratmath.com/symbolic/steps.html
+
+Step records
+
+## Step records for every operation
+
+`explain.solve(…)`, `explain.factor(…)` and the rest run an operation and return its answer with the list of named steps that produced it, for an app to show. A step is shown only if it was checked, and it says how.
+
+### Using it
+
+```js
+import { explain, sym } from "@ratmath/symbolic";
+
+const d = explain.expand("(x + 1)^2 - (x - 1)^2");
+String(d);
+// expand (x + 1)^2 - (x - 1)^2
+// 1. multiply out
+//     (x + 1)^2  =  x^2 + 2*x + 1   [proven]
+// 2. multiply out
+//     (x - 1)^2  =  x^2 - 2*x + 1   [proven]
+// 3. collect like terms
+//     x^2 + 2*x + 1 - (x^2 - 2*x + 1)  =  4*x   [proven]
+// result: 4*x
+
+d.steps[0].rule;        // "multiply out"
+String(d.steps[0].to);  // "x^2 + 2*x + 1"
+d.steps[0].check;       // "proven"
+d.toTeX();              // an aligned block of the steps
+
+String(sym("x^4 - 1").explain("factor"));       // the same, as a method
+String(explain.solve("sqrt(x + 3) = x - 3"));   // the method's steps, the check, and the rejected candidate
+```
+
+Every operation has one: `expand`, `factor`, `collect`, `apart`, `simplify`, `rewrite`, `equal`, `solve`, `solveInequality`, `solveSystem`, `integrate`, `limit`, `taylor` and `sum`. Each takes the same arguments as the operation and returns a `Derivation`: `operation`, `input`, `result` (what the operation itself returns), `steps` and `omitted`.
+
+### Three ways a step is checked
+
+| check | Meaning |
+
+| "proven" | The step is an equality A=B and the normal form of A−B is 0, or it is a proof in itself (a point that separates two expressions, an antidifference that differences back to the term). |
+
+| "test points" | A and B agree to certified precision at exact test points, but the normal form could not show they are equal. This is evidence, not proof, and checkedAt says how many points agreed. |
+
+| "by the result" | The step is part of a method whose outcome is checked as a whole: the solutions of an equation are put back into it, an antiderivative is differentiated, an antidifference is differenced. Squaring both sides is not an equivalence, so it cannot be checked on its own; what matters is that the candidates it produces are. |
+
+A step between two expressions that could not be checked at all is not shown; `omitted` counts such steps. So an app that displays a derivation never displays an unchecked equality.
+
+### What the steps are
+
+Rewriting. `expand` multiplies out each term that needs it and then collects like terms; a quotient is first brought over a common denominator, with the cancelled factors named. `factor` expands and then factors over the rationals. `apart` forms one fraction, factors the denominator, and splits. `simplify` shows each rule the assumptions allow, then the choice of the smallest equal form. `rewrite` shows each rule application, and the rules that were blocked because their conditions were not proven.
+
+Equality. The normal form of each side, and then either the difference reducing to 0, a point where certified values of the two sides do not overlap, or the plain statement that the question is undecided.
+
+Solving, integrating, limits and sums. The steps of the method in the order they were taken (substitution, zero product, quadratic formula, inverse sine with every turn, integration by parts, partial fractions, sums of powers, telescoping, …), followed by the check that makes them trustworthy: solutions put back, rejected candidates with the reason, the derivative of the antiderivative, the antidifference.
+
+### Try it
+
+```js
+// A worked page of algebra, one derivation per line of homework.
+for (const d of [
+  explain.expand("(2x - 3)^2 - (x + 1)*(x - 1)"),
+  explain.factor("x^3 - 3x^2 - x + 3"),
+  explain.apart("(3x + 5)/(x^2 + x - 2)", "x"),
+  explain.simplify("log(x^3) - log(x)", { assume: { x: "positive" } }),
+  explain.equal("cos(x)^4 - sin(x)^4", "cos(2x)"),
+]) PRINT(String(d), "\n");
+
+PRINT(String(explain.solve("x + sqrt(x) = 6")), "\n");
+PRINT(String(explain.integrate("x^2*exp(x)")), "\n");
+PRINT(String(explain.solveSystem(["x + 2y = 5", "3x - y = 1"])), "\n");
+
+// How the steps were checked
+const counts = {};
+for (const d of [explain.expand("(x+1)^5"), explain.solve("sin(x)*cos(x) = 1/4"), explain.sum("k^3", "k", 1, "n")]) for (const s of d.steps) counts[s.check] = (counts[s.check] ?? 0) + 1;
+counts
+```

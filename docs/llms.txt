@@ -1,0 +1,105 @@
+# @ratmath/symbolic
+
+> Symbolic algebra for RatMath: expressions, rewriting, solving and closed forms, with every step checked by the certified libraries. Part of the RatMath Shelf; numbers come from @ratmath/core (a peer dependency). ESM: `import * as symbolic from "@ratmath/symbolic"`.
+
+Built from 0.2.0, commit 82e737b. `file:line` is relative to the package root (also node_modules/@ratmath/symbolic/); on GitHub: https://github.com/ratmath/symbolic/blob/82e737b/<file>#L<line>. Docs pages are under https://ratmath.com/symbolic/. Full types: index.d.ts.
+
+Types: `type ExprLike = string | Expr | Tree | number | bigint | Rational`; `type AssumptionOne = string | [number | string | Rational, number | string | Rational] | RationalInterval | Region`; `type AssumptionSpec = Record<string, AssumptionOne | AssumptionOne[]>`; `type Sign = "positive" | "negative" | "zero" | "nonnegative" | "nonpositive" | "nonzero" | "unknown"`; `type RuleSet = Rule | RuleSet[] | readonly RuleSet[] | { readonly [name: string]: RuleSet }`
+
+## Docs
+
+- https://ratmath.com/symbolic/llms-full.txt: every page below as Markdown, each with a runnable example
+- Pages: index (Overview), reference (Reference), explore (Explore), expressions (Expressions), assumptions (Assumptions), normal-forms (Normal forms), rules (Rules), equality (Equality), solving (Solving equations), trig-equations (Trigonometric equations), systems (Systems of equations), inequalities (Inequalities), antiderivatives (Antiderivatives), limits (Limits), expansions (Expansions), sums (Sums), steps (Step records)
+
+## API
+
+name(params) → result — meaning · file:line · docs page
+
+- `Expr class: tree, variables, toString, toTeX, toJSON, subs, diff, evaluate, approx, same, expand, factor, collect, apart, simplify, normal, rewrite, equals, sign, solve, integrate, limit, taylor, explain` · src/expr.js:29 · expressions
+- `sym(x: ExprLike) → Expr` — An Expr from a string, a number or a tree. · src/expr.js:81 · expressions
+- `tree(x: ExprLike) → Tree` — The plain tree of a string, an Expr, a number or a tree. · src/expr.js:72 · expressions
+- `substitute(x: ExprLike, map: Record<string, ExprLike> | Map<string, ExprLike>) → Tree` — Replace variables by trees, simultaneously. · src/expr.js:90 · limits
+- `toTeX(x: ExprLike) → string` · src/expr.js:135 · reference
+- `evaluate(x: ExprLike, values?: Record<string, number | bigint | string | Rational>, bits?: number) → RationalInterval` — Certified enclosure of a tree at exact rational values of its variables. · src/expr.js:118 · expressions
+- `SymbolicError class: code` · src/expr.js:18 · normal-forms
+- `num(value: number | bigint | string | Rational) → Tree` · from @ratmath/analytic · expressions
+- `v(name: string) → Tree` · from @ratmath/analytic · expressions
+- `op(o: string, ...args: Tree[]) → Tree` · from @ratmath/analytic · expressions
+- `call(name: string, ...args: Tree[]) → Tree` · from @ratmath/analytic · expressions
+- `Assumptions class: size, and, sign, isInteger, proves, samples, toString` · src/assume.js:348 · reference
+- `assume(spec?: AssumptionSpec | Assumptions) → Assumptions` — Assumptions from { x: "positive", n: "integer", t: [0, 1], u: "> 2", w: Region }. · src/assume.js:525 · assumptions
+- `parseCondition(text: string) → Condition` — "lhs > rhs" and friends as { op, lhs, rhs } with trees; "integer(n)" as { op: "integer", lhs }. · src/assume.js:528
+- `normal(x: ExprLike, options?: NormalOptions) → NormalForm` — The normal form with its parts: { expr, numerator, denominator, cancelled, kernels }. · src/normal.js:708 · normal-forms
+- `expand(x: ExprLike, options?: NormalOptions) → Expr` — Multiply out and collect: one fraction with expanded numerator and denominator, common factors cancelled. · src/normal.js:721 · normal-forms
+- `factor(x: ExprLike, options?: NormalOptions) → Expr` — Factor numerator and denominator over the rationals (kernels count as variables). · src/normal.js:746 · normal-forms
+- `collect(x: ExprLike, name?: string, options?: NormalOptions) → Expr` — Group by powers of one variable: c_n·x^n + … + c_0 with each coefficient in normal form. · src/normal.js:777 · normal-forms
+- `apart(x: ExprLike, name?: string, options?: NormalOptions) → Expr` — Partial fractions over the rationals in one variable (the only variable or kernel present). · src/normal.js:798 · normal-forms
+- `together: typeof expand` — The same normal form under the names it also goes by. · src/normal.js:723 · normal-forms
+- `cancel: typeof expand` · src/normal.js:724 · normal-forms
+- `isZero(x: ExprLike, options?: NormalOptions) → boolean | "nonzero"` — True when the normal form is 0, "nonzero" when it is a nonzero number, else false (nothing proven). · src/normal.js:727 · reference
+- `rewrite(x: ExprLike, rules: RuleSet, options?: RewriteOptions) → RewriteResult` — Apply rules until none applies (innermost first, at most `maxSteps` times). · src/rewrite.js:96 · rules
+- `match(pattern: ExprLike, target: ExprLike, bindings?: Record<string, Tree>) → Record<string, Tree> | null` — Bindings { name_: tree } that make the pattern equal to the tree, or null. · src/rewrite.js:18 · reference
+- `rule(from: ExprLike, to: ExprLike, options?: RuleOptions) → Rule` — rule("log(a_*b_)", "log(a_) + log(b_)", { when: ["a_ > 0", "b_ > 0"], name: "log of a product" }) · src/rewrite.js:64 · rules
+- `Rule class: from, to, when, name, toString` · src/rewrite.js:48
+- `rules: { readonly powers: readonly Rule[]; readonly logs: { readonly expand: readonly Rule[]; readonly combine: readonly Rule[] }; readonly trig: { readonly expand: readonly Rule[]; readonly reduce: readonly Rule[] } …` · src/rewrite.js:167 · rules
+- `spotCheck(a: ExprLike, b: ExprLike, assumptions: Assumptions, count?: number, bits?: number) → { agreed: number; refuted: Witness | null }` — Compare two trees at exact test points: { agreed, refuted: null | { point, left, right } }. · src/rewrite.js:69 · reference
+- `equal(a: ExprLike, b: ExprLike, options?: EqualOptions) → Verdict` — Are the two expressions equal? · src/equal.js:77 · equality
+- `simplify(x: ExprLike, options?: Options) → Expr` — A simpler equal expression: the smallest of the normal form, the normal form after the rules that the assumptions prove, and the factored form. · src/equal.js:120 · normal-forms
+- `Verdict class: verdict, method, witness, agreedAt, value, toString` · src/equal.js:47 · reference
+- `parse` — from @ratmath/analytic
+- `format` — from @ratmath/analytic
+- `differentiate` — from @ratmath/analytic
+- `solve(equation: ExprLike, variable?: string, options?: SolveOptions) → Solutions` — Solve an equation for one real variable. solve("x^2 - 5x + 6 = 0") x = 2, 3 solve("sqrt(x + 3) = x - 3") x = 6, with x = 1 rejected solve("2*sin(x) = 1")… · src/solve.js:1041 · solving
+- `solveInequality(inequality: string, variable?: string, options?: SolveOptions) → RealSet` — Solve an inequality in one real variable: the answer is a RealSet. solveInequality("x^2 - 3x + 2 > 0") (-inf, 1) U (2, inf) solveInequality("(x - 1)/(x + 2)… · src/solve.js:1300 · inequalities
+- `Solutions class: variable, solutions, rejected, complete, all, set, conditions, notes, steps, values, Symbol.iterator, toString` — The outcome of solve(). solutions the solutions, in increasing order (families last) rejected candidates that the algebra produced and the check refused,… · src/solve.js:744 · reference
+- `Solution class: period, kind, verified, where, enclosure, approx, member, toString` — One solution. · src/solve.js:706 · solving
+- `RealSet class: pieces, isEmpty, isAll, contains, toRegionText, toString` — A set of real numbers: a finite union of intervals and points. pieces [{ lo, hi, loClosed, hiClosed }] in increasing order; lo and hi are Exprs or null… · src/solve.js:1206 · reference
+- `integrate(f: ExprLike, variable?: string, options?: IntegrateOptions) → Antiderivative` — An antiderivative, checked by differentiating it. integrate("x*exp(x)") x*exp(x) - exp(x) by parts integrate("1/(x^2 - 1)") log|x - 1|/2 - log|x + 1|/2… · src/calculus.js:592 · antiderivatives
+- `Antiderivative class: integrand, variable, found, result, verified, checkedAt, steps, value, enclosure, agrees, note, toString` — The outcome of integrate(). · src/calculus.js:562 · reference
+- `taylor(f: ExprLike, variable?: string, about?: ExprLike | number, order?: number, options?: Options) → Expansion` — The expansion of an expression about a point, with exact coefficients. taylor("exp(x)", "x", 0, 4) 1 + x + x^2/2 + x^3/6 + x^4/24 taylor("1/(x*(1 - x))",… · src/calculus.js:766 · limits
+- `limit(f: ExprLike, variable?: string, at?: ExprLike | number | "inf" | "-inf", options?: Options & { side?: "left" | "right" }) → Limit` — A limit in closed form. limit("sin(x)/x", "x", 0) 1 limit("(x^2 - 1)/(x - 1)", "x", 1) 2 limit("(1 - cos(x))/x^2", "x", 0) 1/2 limit("1/x", "x", 0) no… · src/calculus.js:847 · limits
+- `Limit class: expression, variable, at, side, kind, value, method, confirmed, enclosure, reason, toString` — The outcome of limit(). · src/calculus.js:812 · reference
+- `solveSystem(equations: ExprLike[] | Array<[ExprLike, ExprLike]>, variables?: string[], options?: Options) → SystemSolutions` — Solve a system of equations for several unknowns. solveSystem(["x + y = 3", "x - y = 1"]) x = 2, y = 1 solveSystem(["a*x + y = 1", "x - y = 0"], ["x", "y"])… · src/system.js:325 · systems
+- `SystemSolutions class: variables, kind, solutions, rejected, complete, conditions, notes, steps, length, Symbol.iterator, toString` — The outcome of solveSystem(). solutions each a { values: { x: Expr, … }, free: [names], verified }; a family keeps its free unknowns as themselves (z = z)… · src/system.js:85 · reference
+- `sum(f: ExprLike, index?: string, from?: ExprLike | number, to?: ExprLike | number | "inf", options?: Options) → Sum` — Σ f(k) for k = from … to, in closed form. sum("k", "k", 1, "n") n*(n + 1)/2 sum("k^3", "k", 1, "n") n^2*(n + 1)^2/4 sum("k*2^k", "k", 0, "n") (n - 1)*2^(n +… · src/sums.js:296 · sums
+- `Sum class: term, index, from, to, value, antidifference, method, verified, diverges, conditions, steps, note, toString, toTeX` — The outcome of sum(). value the closed form (an Expr), "inf"/"-inf" for a divergent sum, or null antidifference F with F(k + 1) − F(k) = f(k), proven, or… · src/sums.js:256 · reference
+- `explain: Readonly<Explain>` — Run an operation and return a Derivation: its result and the checked steps. explain.expand("(x + 1)^2 - (x - 1)^2") explain.solve("sqrt(x + 3) = x - 3")… · src/steps.js:260 · steps
+- `Step class: rule, detail, from, to, check, checkedAt, toString, toTeX` — One step: a named rule, what it did, and how it was checked. · src/steps.js:40 · reference
+- `Derivation class: operation, input, result, steps, omitted, length, Symbol.iterator, toString, toTeX` — An operation's result with the checked steps that produced it. · src/steps.js:63 · steps
+- `plan: readonly PlannedPhase[]` · src/plan.js:5 · reference
+
+## Example
+
+```js
+import { sym, equal, solve, integrate, limit, solveSystem, sum, explain } from "@ratmath/symbolic";
+// A classic: is this really 1?
+const lhs = sym("(sqrt(5) + 1)/2 * (sqrt(5) - 1)/2");
+console.log(lhs.toString(), "=", lhs.expand().toString());
+
+// Three answers to "are these equal?"
+for (const [a, b] of [
+  ["cos(x)^4 - sin(x)^4", "cos(2x)"],
+  ["sqrt(x^2 + 2x + 1)", "x + 1"],
+  ["sqrt(x^2 + 2x + 1)", "abs(x + 1)"],
+  ["exp(x)*exp(-x)", "1"],
+  ["atan(1)", "pi/4"],
+]) console.log(a, " vs ", b, " → ", equal(a, b).toString());
+
+// With an assumption the second one becomes a proof
+console.log(equal("sqrt(x^2 + 2x + 1)", "x + 1", { assume: { x: "> -1" } }).toString());
+
+// Solving checks its candidates; integrating checks its answer
+console.log(solve("sqrt(x + 3) = x - 3").toString());
+console.log(integrate("x^2*sin(x)").toString());
+console.log(limit("(1 - cos(x))/x^2", "x", 0).toString());
+
+// Systems and sums, and the steps behind an answer
+console.log(solveSystem(["x^2 + y^2 = 25", "x + y = 7"]).toString());
+console.log(sum("k*2^k", "k", 0, "n").toString());
+String(explain.solve("2sin(x)^2 = 1"))
+```
+
+## More
+
+- tests/: worked examples for every function
+- https://ratmath.com/core/ (numbers), https://ratmath.com/shelf/ (all the libraries)
