@@ -519,7 +519,7 @@ class Ctx {
     if (q.equals(ZERO)) return null;
     q = q.divide(u.frac.den.toConstant());
     const w = op("-", u.tree, op("*", num(q), PI_AST));
-    const turns = q.divide(Q(2)).floor();
+    const turns = BigInt(q.divide(Q(2)).floor());
     const r = q.subtract(new Rational(turns * 2n));
     const half = r.multiply(Q(2));
     if (half.denominator === 1n) {

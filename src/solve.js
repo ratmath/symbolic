@@ -795,8 +795,8 @@ export class Solutions {
       const e = (t) => Val.merge(t, s.val).enclosure(64);
       const [a, b] = [e(op("/", op("-", L.tree, s.val.tree), p)), e(op("/", op("-", H.tree, s.val.tree), p))];
       const ends = [a.low, a.high, b.low, b.high];
-      const first = ends.reduce((m, q) => (q.compareTo(m) < 0 ? q : m)).floor() - 1n;
-      const last = ends.reduce((m, q) => (q.compareTo(m) > 0 ? q : m)).floor() + 1n;
+      const first = BigInt(ends.reduce((m, q) => (q.compareTo(m) < 0 ? q : m)).floor()) - 1n;
+      const last = BigInt(ends.reduce((m, q) => (q.compareTo(m) > 0 ? q : m)).floor()) + 1n;
       if (last - first > 10000n) refuse("too-many", "the interval holds more than 10000 members of a family");
       for (let n = first; n <= last; n++) {
         const val = Val.merge(op("+", s.val.tree, op("*", num(new Rational(n)), p)), s.val);
@@ -1163,7 +1163,7 @@ function absoluteCases(lhs, rhs, x, A, options) {
   for (let i = 0; i + 1 < ends.length; i++) {
     const [a, b] = [ends[i], ends[i + 1]];
     if (a !== null && holdsAt(a)) pieces.push(new Piece(a, a, true, true));
-    const q = new Val(num(a === null && b === null ? ZERO : a === null ? new Rational(b.enclosure(64).low.floor() - 1n) : b === null ? new Rational(a.enclosure(64).high.floor() + 1n) : simplest(a.enclosure(256).high, b.enclosure(256).low)));
+    const q = new Val(num(a === null && b === null ? ZERO : a === null ? new Rational(BigInt(b.enclosure(64).low.floor()) - 1n) : b === null ? new Rational(BigInt(a.enclosure(64).high.floor()) + 1n) : simplest(a.enclosure(256).high, b.enclosure(256).low)));
     const cased = mapTree(diff, (t) => {
       if (!(t.type === "call" && t.name === "abs" && dependsOn(t, x))) return undefined;
       const sg = signOf(new Val(substitute(t.args[0], { [x]: q.tree })), A);
@@ -1512,8 +1512,8 @@ export function solveInequality(inequality, name, options = {}) {
   const sample = (a, b) => {
     // a rational strictly between two values (null for unbounded)
     if (a === null && b === null) return ZERO;
-    if (a === null) return new Rational(b.enclosure(64).low.floor() - 1n);
-    if (b === null) return new Rational(a.enclosure(64).high.floor() + 1n);
+    if (a === null) return new Rational(BigInt(b.enclosure(64).low.floor()) - 1n);
+    if (b === null) return new Rational(BigInt(a.enclosure(64).high.floor()) + 1n);
     for (const bits of [32, 64, 256, 1024]) {
       const ea = a.enclosure(bits);
       const eb = b.enclosure(bits);
