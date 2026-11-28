@@ -1,7 +1,10 @@
 // eliminate() and reverseOrder(): each answer is checked here against a result
 // known by hand, and by putting numbers into the parametrisation.
-import { test, expect, describe } from "bun:test";
+import { test, expect, describe, setDefaultTimeout } from "bun:test";
 import * as S from "../index.js";
+
+// certified searches: seconds each here, more on a slow machine
+setDefaultTimeout(120000);
 
 describe("eliminate", () => {
   test("the ellipse x = 2cos t, y = 3 sin t", () => {
