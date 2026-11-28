@@ -444,6 +444,38 @@ export function sinusoid(expr: ExprLike, x?: string): {
   fn: "sin" | "cos"; amplitude: Expr; A: Expr; B: Expr; C: Expr; D: Expr;
   period: Expr; frequency: Expr; phaseShift: Expr; midline: Expr; form: Expr; verified: "proven" | "checked" | "unverified";
 };
+export interface Elimination {
+  parameter: string;
+  kind: "rational" | "trig" | "exp";
+  /** The first equation, whole-number coefficients, constant on the right. */
+  equation: string;
+  /** "x^2/4 + y^2/9 = 1" for a conic in pure squares, else null. */
+  standard: string | null;
+  polynomial: string;
+  equations: string[];
+  /** Factors of the eliminant that do not vanish on the curve. */
+  dropped: string[];
+  method: string;
+  verified: "proven" | "checked";
+  steps: string[];
+  note: string;
+}
+/** The equation(s) satisfied by a parametrised curve, by resultants; each factor is tested against the parametrisation. */
+export function eliminate(curve: Record<string, ExprLike>, parameter?: string): Elimination;
+export interface IteratedLimits { variable: string; from: string; to: string }
+export interface ReversedIntegral {
+  region: string;
+  pieces: Array<{ outer: IteratedLimits; inner: IteratedLimits }>;
+  text: string;
+  original: { value: Expr | null; inner: string | null; enclosure: RationalInterval | null };
+  reversed: { value: Expr | null; inner: string[] | null; enclosure: RationalInterval | null };
+  value: Expr | null;
+  /** "proven": equal closed forms; "checked": certified values overlap; false: they disagree; null: not compared. */
+  agree: "proven" | "checked" | false | null;
+  notes: string[];
+}
+/** Describe the region of an iterated integral with the other variable outside, and compare the two integrals. */
+export function reverseOrder(integrand: ExprLike, limits: { outer: [string, ExprLike | number, ExprLike | number]; inner: [string, ExprLike | number, ExprLike | number]; digits?: number }): ReversedIntegral;
 export function implicitDiff(F: ExprLike, x?: string, y?: string, options?: { order?: 1 | 2 }): {
   first: Expr; second: Expr | null; steps: ReadonlyArray<{ rule: string; detail: string }>;
   at(point: Record<string, ExprLike | number>): { first: Expr; second: Expr | null };

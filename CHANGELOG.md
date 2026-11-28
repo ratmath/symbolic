@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- `eliminate(curve, parameter)` (Course Test roadmap, item B6): the equation of
+  a parametrised curve by resultants, for coordinates rational in the
+  parameter, in sin and cos of its multiples (as s, c with s² + c² = 1) or in
+  exponentials. The eliminant is factored and each factor is tested by
+  substituting the parametrisation; extra factors are dropped and listed. More
+  than two coordinates go through a Gröbner basis.
+- `reverseOrder(f, { outer, inner })`: the region of an iterated integral
+  described with the other variable outside (several pieces where needed), with
+  both iterated integrals compared: "proven" for equal closed forms, "checked"
+  for overlapping certified values.
+- New docs page "Eliminating a parameter".
+
 - Review of batch A9 (Course Test B1):
   - `compose` domains: asin and acos restrict the inside to [−1, 1]; a negative
     even-root power excludes the zero of the inside; tan, sec, cot, csc, powers
