@@ -10,33 +10,33 @@
         "@ratmath/structures": "^0.5.0",
       },
       "devDependencies": {
-        "@ratmath/core": "^0.11.0",
+        "@ratmath/core": "^0.12.0",
         "katex": "0.19.1",
       },
       "peerDependencies": {
-        "@ratmath/core": ">=0.10.0 <0.12.0",
+        "@ratmath/core": ">=0.12.0",
       },
     },
     "vendor/algebraic": {
       "name": "@ratmath/algebraic",
       "version": "0.1.0",
       "devDependencies": {
-        "@ratmath/core": "^0.11.0",
+        "@ratmath/core": "^0.12.0",
         "katex": "0.19.1",
       },
       "peerDependencies": {
-        "@ratmath/core": ">=0.10.0 <0.12.0",
+        "@ratmath/core": ">=0.12.0",
       },
     },
     "vendor/analytic": {
       "name": "@ratmath/analytic",
       "version": "0.1.0",
       "devDependencies": {
-        "@ratmath/core": "^0.11.0",
+        "@ratmath/core": "^0.12.0",
         "katex": "0.19.1",
       },
       "peerDependencies": {
-        "@ratmath/core": ">=0.10.0 <0.12.0",
+        "@ratmath/core": ">=0.12.0",
       },
     },
     "vendor/linalg": {
@@ -46,11 +46,11 @@
         "@ratmath/algebraic": "^0.1.0",
       },
       "devDependencies": {
-        "@ratmath/core": "^0.11.0",
+        "@ratmath/core": "^0.12.0",
         "katex": "0.19.1",
       },
       "peerDependencies": {
-        "@ratmath/core": ">=0.10.0 <0.12.0",
+        "@ratmath/core": ">=0.12.0",
       },
     },
     "vendor/structures": {
@@ -60,12 +60,12 @@
         "@ratmath/algebraic": "^0.1.0",
       },
       "devDependencies": {
-        "@ratmath/core": "^0.11.0",
+        "@ratmath/core": "^0.12.0",
         "@ratmath/linalg": "^0.1.0",
         "katex": "0.19.1",
       },
       "peerDependencies": {
-        "@ratmath/core": ">=0.10.0 <0.12.0",
+        "@ratmath/core": ">=0.12.0",
       },
     },
   },
@@ -74,7 +74,7 @@
 
     "@ratmath/analytic": ["@ratmath/analytic@workspace:vendor/analytic"],
 
-    "@ratmath/core": ["@ratmath/core@0.11.1", "", {}, "sha512-kzl0K+pY7cjZ+AAw5dl0rbUKhRw6vP0HjZEN3GiYWKYoFgk3Qw4DBkm8cfmlNtioAN2R/MiOgrF6CHSor155jw=="],
+    "@ratmath/core": ["@ratmath/core@0.12.0", "", {}, "sha512-OawO/pKtirVhq4/id9UuX+XFz98Ud2UdkJaaW8MTQSg6bHUycd4Wl59ChEDgczqVcVhxyGY/me4F1gnLpaprWw=="],
 
     "@ratmath/linalg": ["@ratmath/linalg@workspace:vendor/linalg"],
 
