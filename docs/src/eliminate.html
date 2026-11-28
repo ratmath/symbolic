@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Eliminating a parameter · RatMath Symbolic</title>
+<meta name="description" content="Eliminating a parameter from a parametrised curve with resultants, and reversing the order of an iterated integral, with @ratmath/symbolic: every answer is checked against the original.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Curves and regions</div>
+<h1>Eliminating a parameter, reversing an integral</h1>
+<p class="lede">Two changes of description. <code>eliminate</code> turns a parametrised curve into an equation in the coordinates. <code>reverseOrder</code> describes the region of an iterated integral with the other variable outside. Both find the new description by a method and then check it against the old one.</p>
+<h2>Using it</h2>
+<pre><code>import { eliminate, reverseOrder } from "@ratmath/symbolic";
+
+const e = eliminate({ x: "2*cos(t)", y: "3*sin(t)" }, "t");
+e.equation;      // "9*x^2 + 4*y^2 = 36"
+e.standard;      // "x^2/4 + y^2/9 = 1"
+e.verified;      // "proven": the parametrisation was put back in
+
+const r = reverseOrder("exp(y^2)", { outer: ["x", 0, 1], inner: ["y", "x", 1] });
+r.text;                    // "∫ from 0 to 1 ∫ from 0 to y exp(y^2) dx dy"
+String(r.reversed.value);  // "e/2 - 1/2"
+r.agree;                   // "checked": certified values of both orders overlap</code></pre>
+
+<h2>Eliminating a parameter</h2>
+<p>If \(x = p(t)/q(t)\) and \(y = u(t)/w(t)\) are rational functions, clearing denominators gives two polynomial equations in \(t\),</p>
+\[ q(t)\,x - p(t) = 0, \qquad w(t)\,y - u(t) = 0 . \]
+<p>A point \((x, y)\) is on the curve when these have a common root \(t\). The <em>resultant</em> of two polynomials in \(t\) is a polynomial in their coefficients that vanishes exactly when they have a common root (or both leading coefficients vanish), so the resultant with respect to \(t\) is an equation in \(x\) and \(y\) alone that every point of the curve satisfies.</p>
+<p>Sines and cosines are handled by making them unknowns. With \(s = \sin t\) and \(c = \cos t\), multiples such as \(\sin 2t = 2sc\) are polynomials in \(s\) and \(c\), and the one relation between them is \(s^2 + c^2 = 1\). For the ellipse the equations are \(x - 2c = 0\), \(y - 3s = 0\), \(s^2 + c^2 - 1 = 0\); removing \(s\) and then \(c\) by resultants leaves \(9x^2 + 4y^2 - 36\). Exponentials \(e^{kt}\) are powers of one unknown \(w = e^t\) in the same way, which covers \(\cosh\) and \(\sinh\).</p>
+<p><strong>Extra factors.</strong> A resultant can vanish for reasons other than a common root, and a chain of resultants can square a factor or add one. So the result is factored, and each irreducible factor is tested by substituting the parametrisation: the fractions are put in and the numerator is reduced with \(s^2 + c^2 = 1\). Only factors that reduce to 0 are kept, and those dropped are listed in <code>dropped</code>. That substitution is a proof and does not depend on how the candidate was found, which is why <code>verified</code> can say <code>"proven"</code>.</p>
+<p><strong>What the answer does not say.</strong> The curve lies on the equation; it may be only part of its solutions. \(x = t^2\), \(y = t^4\) gives \(y = x^2\), but only the half with \(x \ge 0\) is traced. And a curve such as the cycloid \(x = t - \sin t\), \(y = 1 - \cos t\), where \(t\) appears both alone and inside a sine, satisfies no polynomial equation at all: <code>eliminate</code> refuses and says so.</p>
+<p>With three or more coordinates one equation is not enough (a space curve is cut out by at least two), and the elimination is done with a Gröbner basis; <code>equations</code> lists them all.</p>
+
+<h2>Reversing the order of integration</h2>
+<p>\(\int_a^b\!\int_{g_1(x)}^{g_2(x)} f\,dy\,dx\) is an integral over the region \(a \le x \le b\), \(g_1(x) \le y \le g_2(x)\). To put \(y\) outside, the same region has to be described by cross-sections in \(x\) at each height \(y\).</p>
+<ul>
+<li>The description can only change at the heights of the corners and of the turning points of \(g_1\) and \(g_2\). These cut the \(y\)-axis into strips.</li>
+<li>On a strip, the ends of a cross-section are among \(x = a\), \(x = b\) and the solutions of \(g_1(x) = y\), \(g_2(x) = y\). At one height inside the strip these candidates are put in order and a point between each neighbouring pair is tested for membership in the region. That decides the limits for the whole strip, since nothing changes within it.</li>
+<li>Strips with the same limits are joined. A region may still need several pieces: \(\int_0^2\!\int_{x/2}^{x} \) becomes \(\int_0^1\!\int_y^{2y} + \int_1^2\!\int_y^2\).</li>
+</ul>
+<p>Then both iterated integrals are computed. If both have closed forms and they are equal, <code>agree</code> is <code>"proven"</code>. Often the point of reversing is that one order has no closed form, as with \(e^{y^2}\); then both orders are computed as certified enclosures over the region by <code>@ratmath/analytic</code>, and <code>agree</code> is <code>"checked"</code> when the enclosures overlap and the closed form found lies with them. A disagreement gives <code>false</code>, and no comparison gives <code>null</code> with a note.</p>
+
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>Returns</th></tr>
+<tr><td><code>eliminate(curve, parameter = "t")</code></td><td><code>{ equation, standard, polynomial, equations, dropped, method, verified, steps, note }</code></td></tr>
+<tr><td><code>reverseOrder(f, { outer: [x, a, b], inner: [y, g1, g2] })</code></td><td><code>{ region, pieces, text, original, reversed, value, agree, notes }</code></td></tr>
+</table></div>
+<template data-runbox>
+// Curves from their parametrisations
+const curves = {
+  "ellipse": { x: "2*cos(t)", y: "3*sin(t)" },
+  "rational circle": { x: "(1 - t^2)/(1 + t^2)", y: "2*t/(1 + t^2)" },
+  "folium": { x: "3*t/(1 + t^3)", y: "3*t^2/(1 + t^3)" },
+  "Lissajous": { x: "cos(t)", y: "sin(2*t)" },
+  "hyperbola": { x: "(exp(t) + exp(-t))/2", y: "(exp(t) - exp(-t))/2" },
+};
+for (const [name, c] of Object.entries(curves)) {
+  const e = eliminate(c, "t");
+  PRINT(name.padEnd(16), (e.standard ?? e.equation).padEnd(28), e.verified, " by", e.method);
+}
+PRINT("twisted cubic:", eliminate({ x: "t", y: "t^2", z: "t^3" }).equations.join(";  "));
+try { eliminate({ x: "t - sin(t)", y: "1 - cos(t)" }); } catch (err) { PRINT("cycloid:", err.message); }
+
+// Reversing the order of integration
+for (const [f, outer, inner] of [["exp(y^2)", ["x", 0, 1], ["y", "x", 1]], ["x*y", ["x", 0, 1], ["y", "x^2", "x"]], ["y", ["x", 0, 2], ["y", "x/2", "x"]]]) {
+  const r = reverseOrder(f, { outer, inner });
+  PRINT(r.text);
+  PRINT("   =", String(r.value), "  the two orders agree:", r.agree);
+}
+eliminate({ x: "2*cos(t)", y: "3*sin(t)" }).standard
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

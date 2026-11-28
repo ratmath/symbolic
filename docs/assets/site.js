@@ -1,8 +1,8 @@
 // Shared page furniture for the symbolic docs: the contents column, the theme
 // switch and the code boxes. Add each topic page to PAGES as it is written.
 
-import * as A from "./symbolic.js?v=ebedfa176c";
-import { mountRunboxes } from "./runbox.js?v=ebedfa176c";
+import * as A from "./symbolic.js?v=6c9292db22";
+import { mountRunboxes } from "./runbox.js?v=6c9292db22";
 
 export { A };
 
@@ -25,6 +25,7 @@ export const PAGES = [
   { href: "expansions.html", title: "Expansions", blurb: "Taylor polynomials and Laurent expansions with exact coefficients" },
   { href: "sums.html", title: "Sums", blurb: "Sums of powers, geometric and telescoping sums, famous series, each proven" },
   { href: "school.html", title: "School algebra", blurb: "Completing the square, composition, sinusoids, implicit derivatives, the Leibniz rule" },
+  { href: "eliminate.html", title: "Eliminating a parameter", blurb: "A curve's equation from its parametrisation by resultants; reversing the order of integration" },
   { href: "steps.html", title: "Step records", blurb: "The checked steps behind every answer, for an app to show" },
 ];
 
