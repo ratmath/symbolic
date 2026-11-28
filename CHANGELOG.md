@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Requires Core 0.12: the `@ratmath/core` peer range is now `>=0.12.0` (Core 0.12 returns Integers from `floor`/`ceil`/`trunc`/`round` and rounds half up by default).
 - `eliminate(curve, parameter)` (Course Test roadmap, item B6): the equation of
   a parametrised curve by resultants, for coordinates rational in the
   parameter, in sin and cos of its multiples (as s, c with s² + c² = 1) or in
