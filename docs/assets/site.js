@@ -1,8 +1,8 @@
 // Shared page furniture for the symbolic docs: the contents column, the theme
 // switch and the code boxes. Add each topic page to PAGES as it is written.
 
-import * as A from "./symbolic.js?v=72ed628f55";
-import { mountRunboxes } from "./runbox.js?v=72ed628f55";
+import * as A from "./symbolic.js?v=6c9292db22";
+import { mountRunboxes } from "./runbox.js?v=6c9292db22";
 
 export { A };
 

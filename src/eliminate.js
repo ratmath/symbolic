@@ -45,9 +45,11 @@ const TRIG = new Set(["sin", "cos", "tan", "cot", "sec", "csc"]);
 
 /** k with arg = k·t (k rational, nothing added), or null. */
 function multipleOf(arg, t) {
-  const d = soft(() => simplify(differentiate(arg, t)).tree);
-  if (!d || d.type !== "num") return d && d.type === "op" && d.op === "neg" && d.args[0].type === "num" ? (soft(() => isZero(op("-", arg, op("*", d, v(t))))) === true ? d.args[0].value.negate() : null) : null;
-  return soft(() => isZero(op("-", arg, op("*", d, v(t))))) === true ? d.value : null;
+  // the value at t = 1 is k; then arg − k·t must be identically 0
+  const at1 = soft(() => evaluate(arg, { [t]: 1 }));
+  if (!at1 || !at1.low.equals(at1.high)) return null;
+  const k = at1.low;
+  return soft(() => isZero(op("-", arg, op("*", num(k), v(t))))) === true ? k : null;
 }
 
 /**
@@ -430,7 +432,10 @@ export function reverseOrder(integrand, { outer, inner, digits = 8 } = {}) {
   else if (numOriginal && numReversed) agree = numOriginal.low.compareTo(numReversed.high) <= 0 && numReversed.low.compareTo(numOriginal.high) <= 0 ? "checked" : false;
   if (agree === "checked" && reversedValue) {
     const val = numOf(reversedValue.tree ?? tree(String(reversedValue)));
-    if (Number.isFinite(val) && Math.abs(val - numOriginal.low.toNumber()) > 1e-5 * Math.max(1, Math.abs(val))) agree = false;
+    // the closed form must lie in the certified value of the original order (with a little room for rounding to doubles)
+    const [lo, hi] = [numOriginal.low.toNumber(), numOriginal.high.toNumber()];
+    const room = (hi - lo) + 1e-9 * Math.max(1, Math.abs(val));
+    if (Number.isFinite(val) && (val < lo - room || val > hi + room)) agree = false;
   }
   const body = f.type === "op" && (f.op === "+" || f.op === "-") ? `(${format(f)})` : format(f);
   const sign = (p) => `∫ from ${p.outer.from} to ${p.outer.to} ∫ from ${p.inner.from} to ${p.inner.to} ${body} d${p.inner.variable} d${p.outer.variable}`;
